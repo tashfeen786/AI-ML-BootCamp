@@ -31,23 +31,23 @@ It includes structured coursework, instructor-led assignments, and independent p
 - 🤖 Machine Learning Fundamentals  
 - 🧩 Practical problem-solving  
 
----
 
 ## 📂 Repository Structure  
 
+```
 AI-ML BootCamp/
 │
 ├── NAVTTC/
-│ └── Official coursework and structured tasks
+│   └── Official coursework and structured tasks
 │
 ├── NetSol/
-│ └── Instructor assignments and class exercises
+│   └── Instructor assignments and class exercises
 │
 ├── Random_Practices/
-│ └── Personal experiments and mini projects
+│   └── Personal experiments and mini projects
 │
 └── README.md
----
+```
 
 ## 🎯 Objectives  
 
