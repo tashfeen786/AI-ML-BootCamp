@@ -47,9 +47,6 @@ AI-ML BootCamp/
 │ └── Personal experiments and mini projects
 │
 └── README.md
-
-
-
 ---
 
 ## 🎯 Objectives  
