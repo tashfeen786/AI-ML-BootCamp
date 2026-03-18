@@ -1,4 +1,4 @@
-# AI-ML-BootCamp
+# AI-ML BootCamp
 # 🚀 AI/ML Learning Journey – NetSol x NAVTTC  
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)  
@@ -35,18 +35,66 @@ It includes structured coursework, instructor-led assignments, and independent p
 
 ## 📂 Repository Structure  
 
-```bash
-AI-ML-NetSol/
+AI-ML BootCamp/
 │
 ├── NAVTTC/
-│   └── Official coursework and structured tasks
+│ └── Official coursework and structured tasks
 │
 ├── NetSol/
-│   └── Instructor assignments and class exercises
+│ └── Instructor assignments and class exercises
 │
 ├── Random_Practices/
-│   └── Personal experiments and mini projects
+│ └── Personal experiments and mini projects
 │
 └── README.md
-This repository reflects my learning journey, consistency, and growth in AI and Machine Learning.
 
+
+
+---
+
+## 🎯 Objectives  
+
+- Track my progress throughout the training  
+- Keep all work organized in one place  
+- Strengthen concepts through hands-on practice  
+- Build a solid AI/ML portfolio  
+
+---
+
+## 🛠 Tech Stack  
+
+- Python  
+- Jupyter Notebook  
+- NumPy  
+- Pandas  
+- Matplotlib  
+- Scikit-learn  
+
+---
+
+## 📈 Current Status  
+
+- Actively learning and building  
+- Continuously updating the repository  
+- Exploring new concepts and tools  
+
+---
+
+## 🔮 Future Plans  
+
+- Build machine learning projects  
+- Work with real-world datasets  
+- Explore advanced AI concepts  
+- Create end-to-end applications  
+
+---
+
+## 🤝 Contributions  
+
+This is a personal learning repository, but feedback and suggestions are always welcome.  
+
+---
+
+## ⭐ Final Note  
+
+This repository reflects my learning journey, consistency, and growth in AI and Machine Learning.  
