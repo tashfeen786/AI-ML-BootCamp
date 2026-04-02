@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confusion Matrix Quiz</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;--green-d:#0F6E56;--green-l:#EAF3DE;--green-t:#3B6D11;
+  --red-l:#FCEBEB;--red-t:#A32D2D;--red-d:#791F1F;
+  --blue:#185FA5;--blue-l:#E6F1FB;
+  --amber-l:#FAEEDA;--amber-t:#854F0B;
+  --purple-l:#EEEDFE;--purple-t:#534AB7;
+  --border:#e2e2da;--bg:#f4f3ef;--card:#fff;
+  --text:#1a1a18;--muted:#6b6b66;--hint:#9e9e98;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+
+/* ── COVER ── */
+.cover{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;background:linear-gradient(160deg,#0d2137 0%,#0F6E56 100%)}
+.cover-badge{background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:99px;margin-bottom:1.25rem;backdrop-filter:blur(4px)}
+.cover h1{font-size:32px;font-weight:700;color:#fff;text-align:center;line-height:1.2;margin-bottom:.5rem}
+.cover p{font-size:15px;color:rgba(255,255,255,.7);text-align:center;margin-bottom:2rem}
+.cover-meta{display:flex;gap:1.5rem;margin-bottom:2.5rem}
+.cover-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 16px;color:rgba(255,255,255,.9);font-size:13px;text-align:center}
+.cover-chip span{display:block;font-size:20px;font-weight:700;color:#fff}
+.name-box{background:#fff;border-radius:16px;padding:1.75rem 2rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.name-box label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.name-box input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:15px;outline:none;color:var(--text);transition:border-color .2s}
+.name-box input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.start-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:1rem;transition:background .2s}
+.start-btn:hover{background:var(--green-d)}
+
+/* ── QUIZ LAYOUT ── */
+.quiz-page{max-width:700px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.quiz-header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.student-pill{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:5px 14px 5px 10px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--green),#185FA5);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.header-right{margin-left:auto;font-size:13px;color:var(--muted);font-weight:500}
+
+/* progress */
+.prog-track{background:var(--border);border-radius:99px;height:6px;margin-bottom:1.5rem;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),#185FA5);border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* question card */
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.75rem;margin-bottom:1rem;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.q-top{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 10px;border-radius:99px}
+.tag-scenario{background:var(--blue-l);color:var(--blue)}
+.tag-calc{background:var(--green-l);color:var(--green-t)}
+.tag-tricky{background:#FAECE7;color:#993C1D}
+.tag-intuition{background:var(--purple-l);color:var(--purple-t)}
+.q-num{font-size:12px;color:var(--hint);margin-left:auto}
+.topic-txt{font-size:12px;color:var(--muted);font-weight:500}
+
+.scenario{background:#fafaf7;border:1px solid var(--border);border-left:3px solid #378ADD;border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;font-size:14px;color:#3d3d38;line-height:1.7}
+.scenario strong{color:var(--text);font-weight:600}
+
+.q-text{font-size:16px;font-weight:600;color:var(--text);line-height:1.55;margin-bottom:1.25rem}
+
+/* options */
+.options{display:flex;flex-direction:column;gap:9px}
+.opt{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;font-size:14px;color:var(--text);transition:all .15s;line-height:1.5;background:var(--card);user-select:none}
+.opt:hover:not(.disabled){background:#fafaf7;border-color:#c8c8c0;transform:translateX(2px)}
+.circle{width:28px;height:28px;min-width:28px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);transition:all .2s}
+.opt.correct{background:var(--green-l);border-color:#639922;color:var(--green-t)}
+.opt.correct .circle{background:#639922;border-color:#639922;color:#fff}
+.opt.wrong{background:var(--red-l);border-color:var(--red-t);color:var(--red-d)}
+.opt.wrong .circle{background:var(--red-t);border-color:var(--red-t);color:#fff}
+.opt.disabled{cursor:default;transform:none}
+
+/* feedback — minimal, no hints */
+.feedback{margin-top:14px;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px}
+.feedback.correct{background:var(--green-l);color:var(--green-t);border:1px solid #9FE1CB}
+.feedback.wrong{background:var(--red-l);color:var(--red-d);border:1px solid #F7C1C1}
+.fb-icon{font-size:18px}
+
+/* nav */
+.nav-row{display:flex;gap:10px;align-items:center;margin-top:1.25rem}
+.btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:9px 20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all .15s}
+.btn:hover:not(:disabled){background:#f0f0ea}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover:not(:disabled){background:var(--green-d)}
+.q-dots{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;max-width:220px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s}
+.dot.done-ok{background:var(--green)}
+.dot.done-x{background:var(--red-t)}
+.dot.active{background:#378ADD}
+
+/* ── RESULTS ── */
+.results-page{max-width:700px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.result-hero{background:linear-gradient(135deg,#0d2137,#0F6E56);border-radius:20px;padding:2.5rem 2rem;text-align:center;margin-bottom:1.25rem;color:#fff}
+.result-hero h2{font-size:15px;font-weight:500;opacity:.75;margin-bottom:.5rem}
+.result-score{font-size:72px;font-weight:700;line-height:1}
+.result-grade{font-size:20px;font-weight:600;margin-top:.5rem}
+.result-sub{font-size:14px;opacity:.7;margin-top:4px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center}
+.stat-n{font-size:28px;font-weight:700}
+.stat-l{font-size:12px;color:var(--muted);margin-top:3px}
+.c-g{color:var(--green-t)}.c-r{color:var(--red-t)}.c-b{color:var(--blue)}
+
+/* answer key accordion */
+.ak-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.25rem}
+.ak-head{padding:1rem 1.25rem;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.ak-row{display:flex;align-items:flex-start;gap:10px;padding:10px 1.25rem;border-bottom:1px solid #f2f2ee;font-size:13px}
+.ak-row:last-child{border-bottom:none}
+.ak-num{color:var(--hint);min-width:24px;font-weight:600;padding-top:1px}
+.ak-topic{color:var(--muted);flex:1;line-height:1.4}
+.ak-ans{font-weight:600;font-size:12px}
+.ak-exp{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+.b-ok{background:var(--green-l);color:var(--green-t)}
+.b-x{background:var(--red-l);color:var(--red-t)}
+
+.bottom-btns{display:flex;gap:10px}
+.bottom-btns .btn{flex:1;text-align:center;padding:13px}
+@media print{.bottom-btns,.nav-row,.btn,.start-btn{display:none}.cover{display:none}}
+@media(max-width:500px){.cover h1{font-size:24px}.result-score{font-size:56px}.cover-meta{gap:.75rem}}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const Q=[
+  {tag:"scenario",topic:"Identify TP & FP",
+   scenario:"A hospital's AI model screened <strong>200 patients</strong> for diabetes.<br>• 50 patients actually <em>have</em> diabetes (positive class).<br>• 150 patients do <em>not</em> have diabetes (negative class).<br>The model predicted <strong>60 patients as diabetic</strong>. Of those 60, only <strong>40 truly have diabetes</strong>.",
+   q:"How many are True Positives (TP) and False Positives (FP)?",
+   opts:["TP = 40, FP = 20","TP = 50, FP = 10","TP = 60, FP = 40","TP = 40, FP = 60"],
+   ans:0,
+   exp:"Of the 60 predicted positives, 40 are truly diabetic → TP = 40. The remaining 60 − 40 = 20 were healthy patients wrongly flagged → FP = 20."},
+
+  {tag:"scenario",topic:"Identify FN & TN",
+   scenario:"Continuing the diabetes scenario.<br>• 50 actual diabetics — 40 were correctly identified (TP = 40).<br>• 150 non-diabetics — 20 were wrongly flagged as diabetic (FP = 20).",
+   q:"What are the False Negatives (FN) and True Negatives (TN)?",
+   opts:["FN = 10, TN = 130","FN = 20, TN = 120","FN = 10, TN = 120","FN = 20, TN = 130"],
+   ans:0,
+   exp:"Diabetics missed by the model = 50 − 40 = 10 → FN = 10. Healthy patients correctly cleared = 150 − 20 = 130 → TN = 130."},
+
+  {tag:"calc",topic:"Accuracy",
+   scenario:"Diabetes model results: TP = 40, TN = 130, FP = 20, FN = 10. Total patients = 200.",
+   q:"What is the model's overall Accuracy?",
+   opts:["80%","85%","75%","90%"],
+   ans:1,
+   exp:"Accuracy = (TP + TN) / Total = (40 + 130) / 200 = 170 / 200 = 0.85 → 85%."},
+
+  {tag:"calc",topic:"Precision",
+   scenario:"Same diabetes model — TP = 40, FP = 20.",
+   q:"What is the Precision? (Round to 2 decimal places)",
+   opts:["0.67","0.80","0.44","0.75"],
+   ans:0,
+   exp:"Precision = TP / (TP + FP) = 40 / 60 ≈ 0.67. Of all patients the model labelled diabetic, only 67% truly were."},
+
+  {tag:"calc",topic:"Recall",
+   scenario:"Same diabetes model — TP = 40, FN = 10.",
+   q:"What is Recall (Sensitivity)?",
+   opts:["0.67","0.75","0.80","0.85"],
+   ans:2,
+   exp:"Recall = TP / (TP + FN) = 40 / 50 = 0.80. The model successfully detected 80% of all actual diabetics."},
+
+  {tag:"calc",topic:"F1 Score",
+   scenario:"For the diabetes model: Precision = 0.67, Recall = 0.80.",
+   q:"What is the F1 Score? (Rounded to 2 decimal places)",
+   opts:["0.72","0.74","0.70","0.73"],
+   ans:3,
+   exp:"F1 = 2 × (P × R) / (P + R) = 2 × (0.67 × 0.80) / (0.67 + 0.80) = 1.072 / 1.47 ≈ 0.73."},
+
+  {tag:"tricky",topic:"High accuracy ≠ good model",
+   scenario:"A fraud-detection model runs on <strong>1000 transactions</strong>: 980 are legitimate, 20 are fraudulent.<br>The model <em>predicts every single transaction as legitimate</em> — it never raises a fraud alert.",
+   q:"What is this model's Accuracy?",
+   opts:["50%","80%","98%","20%"],
+   ans:2,
+   exp:"TN = 980, FN = 20, TP = 0, FP = 0. Accuracy = 980 / 1000 = 98%. Yet it catches zero fraud — a perfect example of why accuracy alone is deceptive on imbalanced data."},
+
+  {tag:"tricky",topic:"Same accuracy, different tradeoff",
+   scenario:"Two spam detectors, both 90% accurate on the same test set:<br>• <strong>Model A</strong>: Precision = 0.95, Recall = 0.60<br>• <strong>Model B</strong>: Precision = 0.70, Recall = 0.95",
+   q:"A bank needs to flag suspicious emails for manual security review — missing a real threat is the biggest risk. Which model should be chosen?",
+   opts:["Model A — reviewers won't be overwhelmed with false alarms","Model B — fewer real threats slip through undetected","Either — accuracy is the same so performance is equivalent","Cannot decide without knowing the F1 score"],
+   ans:1,
+   exp:"Missing a real threat (FN) is far costlier than a false alarm (FP) here. Model B's Recall of 0.95 means only 5% of real threats slip through. Model A catches just 60%. Higher Recall is the right priority."},
+
+  {tag:"intuition",topic:"Choosing the right metric",
+   q:"A cancer-screening system must <em>never</em> miss a patient who actually has cancer — a missed case could be fatal. Which metric is most critical to maximise?",
+   opts:["Precision","Accuracy","Recall","F1 Score"],
+   ans:2,
+   exp:"Recall = TP / (TP + FN). Maximising Recall minimises False Negatives — the missed cancer cases. In life-critical screening, a false alarm is far preferable to a missed diagnosis."},
+
+  {tag:"intuition",topic:"Choosing the right metric",
+   q:"A news platform auto-labels articles as 'Breaking News'. If non-breaking stories get labelled, regular readers stop trusting the tag entirely. Which metric should be maximised?",
+   opts:["Recall","F1 Score","Accuracy","Precision"],
+   ans:3,
+   exp:"Precision = TP / (TP + FP). Maximising Precision eliminates false alarms — every 'Breaking News' tag must genuinely be breaking news. Incorrectly labelled stories (FP) destroy reader trust."},
+
+  {tag:"scenario",topic:"Build the full matrix",
+   scenario:"An email spam filter was tested on <strong>500 emails</strong>.<br>• 200 were actually spam; 300 were legitimate.<br>• The filter correctly caught <strong>160 spam</strong> emails.<br>• The filter incorrectly flagged <strong>30 legitimate</strong> emails as spam.",
+   q:"What are TP, FP, FN, and TN?",
+   opts:["TP=160, FP=30, FN=40, TN=270","TP=160, FP=40, FN=30, TN=270","TP=200, FP=30, FN=40, TN=230","TP=160, FP=30, FN=30, TN=280"],
+   ans:0,
+   exp:"TP=160 (spam correctly caught). FP=30 (legit wrongly flagged). FN=200−160=40 (spam that slipped through). TN=300−30=270 (legit correctly cleared). Verify: 160+30+40+270=500 ✓"},
+
+  {tag:"calc",topic:"Precision & Recall from the matrix",
+   scenario:"Spam filter matrix: TP=160, FP=30, FN=40, TN=270.",
+   q:"What are Precision and Recall? (rounded to 2 decimal places)",
+   opts:["Precision=0.84, Recall=0.80","Precision=0.80, Recall=0.84","Precision=0.84, Recall=0.84","Precision=0.80, Recall=0.80"],
+   ans:0,
+   exp:"Precision = 160/(160+30) = 160/190 ≈ 0.84. Recall = 160/(160+40) = 160/200 = 0.80."},
+
+  {tag:"tricky",topic:"Flipping all predictions",
+   scenario:"A model on 100 samples produces: TP=30, TN=50, FP=10, FN=10.<br>Now imagine you <em>reverse every prediction</em> — whatever was predicted positive becomes negative, and vice versa.",
+   q:"What does the new True Positive (TP) become?",
+   opts:["50","30","10","40"],
+   ans:0,
+   exp:"Reversing predictions swaps TP ↔ TN and FP ↔ FN. The original TN = 50 becomes the new TP = 50."},
+
+  {tag:"intuition",topic:"F1 vs Accuracy on imbalanced data",
+   q:"Model X has Accuracy = 92% but F1 = 0.45. Model Y has Accuracy = 85% but F1 = 0.82. Which model is likely trained on an imbalanced dataset yet still genuinely useful?",
+   opts:["Model X — high accuracy is always the gold standard","Model Y — high F1 reflects balanced precision and recall","Both are equally useful","Cannot determine without the confusion matrix"],
+   ans:1,
+   exp:"Model X's high accuracy paired with a low F1 of 0.45 is a textbook sign of class imbalance — it's probably predicting the majority class almost exclusively. Model Y's F1 of 0.82 shows it handles both classes well."},
+
+  {tag:"tricky",topic:"Perfect Precision, near-zero Recall",
+   scenario:"A spam filter flags only <strong>2 emails</strong> out of 1000 as spam. Both flagged emails are genuinely spam. The dataset contains <strong>150 actual spam emails</strong>.",
+   q:"What are the Precision and Recall of this filter?",
+   opts:["Precision=1.0, Recall=0.013","Precision=0.013, Recall=1.0","Precision=1.0, Recall=1.0","Precision=0.5, Recall=0.013"],
+   ans:0,
+   exp:"TP=2, FP=0, FN=148. Precision=2/2=1.0 (never wrong when it flags). Recall=2/150≈0.013 (catches barely 1% of spam). Perfect Precision means nothing if Recall is near zero."},
+
+  {tag:"intuition",topic:"What does a FN really cost?",
+   q:"A self-driving car's pedestrian detector fails to detect 3 real pedestrians crossing the road. These 3 misses are classified as which type of error in the confusion matrix?",
+   opts:["True Positives — the system saw pedestrians and responded","False Positives — the system raised unnecessary alerts","False Negatives — real pedestrians the system failed to flag","True Negatives — correctly ignored non-pedestrian objects"],
+   ans:2,
+   exp:"The pedestrians are the actual positives. The model predicted 'no pedestrian' for all 3 — failing to detect them. That is a False Negative: a real positive the model missed."},
+
+  {tag:"intuition",topic:"Precision–Recall tradeoff in production",
+   q:"A factory defect detector has Precision=0.90, Recall=0.60. The factory manager decides to <em>lower the model's confidence threshold</em>. What is the most likely effect?",
+   opts:["Both Precision and Recall will increase","Precision will increase, Recall will decrease","Recall will increase but Precision will likely drop","Neither metric changes — threshold only affects speed"],
+   ans:2,
+   exp:"Lowering the threshold makes the model flag more items. It will catch more real defects (higher Recall / fewer FN), but it will also flag more good products incorrectly (higher FP → lower Precision). This is the classic Precision–Recall tradeoff."}
+];
+
+let name='', cur=0, ans=new Array(Q.length).fill(null), done=new Array(Q.length).fill(false);
+
+function initials(n){return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+
+function renderCover(){
+  return`<div class="cover">
+    <div class="cover-badge">Machine Learning · Evaluation Metrics</div>
+    <h1>Confusion Matrix<br>MCQ Quiz</h1>
+    <p>Test your understanding of TP, TN, FP, FN,<br>Accuracy, Precision, Recall & F1 Score</p>
+    <div class="cover-meta">
+      <div class="cover-chip"><span>${Q.length}</span>Questions</div>
+      <div class="cover-chip"><span>4</span>Topics</div>
+      <div class="cover-chip"><span>~15</span>Minutes</div>
+    </div>
+    <div class="name-box">
+      <label>Your name</label>
+      <input id="sname" type="text" placeholder="Enter your full name" maxlength="60" onkeydown="if(event.key==='Enter')start()"/>
+      <button class="start-btn" onclick="start()">Begin Quiz</button>
+    </div>
+  </div>`
+}
+
+function start(){
+  const v=document.getElementById('sname').value.trim();
+  if(!v){document.getElementById('sname').style.borderColor='#e74c3c';document.getElementById('sname').focus();return;}
+  name=v; render();
+}
+
+function dotColor(i){
+  if(i===cur) return 'active';
+  if(ans[i]===null) return '';
+  return ans[i]===Q[i].ans?'done-ok':'done-x';
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(!name){app.innerHTML=renderCover();setTimeout(()=>document.getElementById('sname').focus(),50);return;}
+  if(cur>=Q.length){app.innerHTML=renderResults();return;}
+  const q=Q[cur];
+  const pct=Math.round((cur/Q.length)*100);
+  const dots=Q.map((_,i)=>`<div class="dot ${dotColor(i)}"></div>`).join('');
+  app.innerHTML=`<div class="quiz-page">
+    <div class="quiz-header">
+      <div class="student-pill">
+        <div class="avatar">${initials(name)}</div>
+        <span>${name}</span>
+      </div>
+      <div class="header-right">Q${cur+1} / ${Q.length}</div>
+    </div>
+    <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+    <div class="q-card">
+      <div class="q-top">
+        <span class="tag tag-${q.tag}">${q.tag}</span>
+        <span class="topic-txt">${q.topic}</span>
+        <span class="q-num">${cur+1} of ${Q.length}</span>
+      </div>
+      ${q.scenario?`<div class="scenario">${q.scenario}</div>`:''}
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts">
+        ${q.opts.map((o,i)=>`<div class="opt" id="o${i}" onclick="pick(${i})">
+          <span class="circle">${String.fromCharCode(65+i)}</span>
+          <span>${o}</span>
+        </div>`).join('')}
+      </div>
+      <div id="fb"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn" onclick="go(-1)" ${cur===0?'disabled':''}>← Back</button>
+      <div class="q-dots">${dots}</div>
+      ${done[cur]?`<button class="btn primary" onclick="go(1)">${cur===Q.length-1?'Finish →':'Next →'}</button>`:'<div style="width:90px"></div>'}
+    </div>
+  </div>`;
+  if(done[cur]) restoreState();
+}
+
+function restoreState(){
+  const q=Q[cur], s=ans[cur];
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(i===q.ans) el.classList.add('correct');
+    else if(i===s && s!==q.ans) el.classList.add('wrong');
+  });
+  showFeedback(s===q.ans);
+}
+
+function showFeedback(ok){
+  document.getElementById('fb').innerHTML=ok
+    ?`<div class="feedback correct"><span class="fb-icon">✓</span> Correct!</div>`
+    :`<div class="feedback wrong"><span class="fb-icon">✗</span> Incorrect — the correct answer is highlighted above.</div>`;
+}
+
+function pick(i){
+  if(done[cur]) return;
+  done[cur]=true; ans[cur]=i;
+  document.querySelectorAll('.opt').forEach((el,j)=>{
+    el.classList.add('disabled');
+    if(j===Q[cur].ans) el.classList.add('correct');
+    else if(j===i && i!==Q[cur].ans) el.classList.add('wrong');
+  });
+  showFeedback(i===Q[cur].ans);
+  const nav=document.querySelector('.nav-row');
+  const nb=document.createElement('button');
+  nb.className='btn primary';
+  nb.textContent=cur===Q.length-1?'Finish →':'Next →';
+  nb.onclick=()=>go(1);
+  nav.replaceChild(nb, nav.lastChild);
+  nav.querySelectorAll('.q-dots .dot')[cur].className='dot '+(i===Q[cur].ans?'done-ok':'done-x');
+}
+
+function go(d){
+  cur=Math.max(0,cur+d);
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderResults(){
+  const total=Q.length;
+  const correct=ans.filter((a,i)=>a===Q[i].ans).length;
+  const wrong=ans.filter((a,i)=>a!==null && a!==Q[i].ans).length;
+  const skip=ans.filter(a=>a===null).length;
+  const pct=Math.round(correct/total*100);
+  const grade=pct>=90?'Outstanding!':pct>=75?'Great work!':pct>=60?'Good effort!':pct>=40?'Keep practising!':'Review the concepts';
+  const medal=pct>=90?'★':pct>=75?'✦':pct>=60?'◆':'○';
+
+  const rows=Q.map((q,i)=>{
+    const ok=ans[i]===q.ans;
+    return`<div class="ak-row">
+      <span class="ak-num">Q${i+1}</span>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="tag tag-${q.tag}" style="font-size:9px">${q.tag}</span>
+          <span class="ak-topic">${q.topic}</span>
+          <span class="badge ${ok?'b-ok':'b-x'}" style="margin-left:auto">${ok?'✓ Correct':'✗ Wrong'}</span>
+        </div>
+        <div class="ak-ans" style="margin-top:5px;color:${ok?'var(--green-t)':'var(--red-t)'}">${ok?'':'Correct answer: '}${q.opts[q.ans]}</div>
+        <div class="ak-exp">${q.exp}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return`<div class="results-page">
+    <div class="result-hero">
+      <h2>${name}'s Score</h2>
+      <div class="result-score">${pct}%</div>
+      <div class="result-grade">${medal} ${grade}</div>
+      <div class="result-sub">${correct} correct out of ${total} questions</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-n c-g">${correct}</div><div class="stat-l">Correct</div></div>
+      <div class="stat-card"><div class="stat-n c-r">${wrong}</div><div class="stat-l">Wrong</div></div>
+      <div class="stat-card"><div class="stat-n c-b">${skip}</div><div class="stat-l">Skipped</div></div>
+    </div>
+    <div class="ak-wrap">
+      <div class="ak-head">Full Answer Key with Explanations</div>
+      ${rows}
+    </div>
+    <div class="bottom-btns">
+      <button class="btn primary" onclick="restart()">Restart Quiz</button>
+      <button class="btn" onclick="window.print()">Save as PDF</button>
+    </div>
+  </div>`;
+}
+
+function restart(){name='';cur=0;ans=new Array(Q.length).fill(null);done=new Array(Q.length).fill(false);render();}
+render();
+</script>
+</body>
+</html>
