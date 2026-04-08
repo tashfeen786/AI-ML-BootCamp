@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Regression — Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #e06c26;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --correct-bg: #0d2b1a;
+    --wrong-bg: #2d1215;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ─── HEADER ─────────────────────────────── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+  .header-meta {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--surface2);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .timer.urgent { color: var(--red); border-color: var(--red); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ─── PROGRESS ────────────────────────────── */
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  /* ─── SCREENS ─────────────────────────────── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ─── START SCREEN ─────────────────────────── */
+  .start-wrap {
+    max-width: 720px;
+    margin: 60px auto;
+    padding: 0 24px;
+  }
+  .start-badge {
+    display: inline-block;
+    background: rgba(240,165,0,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(240,165,0,0.3);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .start-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .start-title em { color: var(--accent); font-style: italic; }
+  .start-subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin-bottom: 36px;
+    max-width: 560px;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .info-card .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    display: block;
+  }
+  .info-card .label { color: var(--text-muted); font-size: 0.82rem; font-weight: 500; }
+  .sections-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 36px;
+  }
+  .sections-list h3 {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .section-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+  }
+  .section-row:last-child { border-bottom: none; }
+  .sec-num {
+    width: 26px; height: 26px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .sec-count { margin-left: auto; color: var(--text-muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; }
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 14px 36px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-start:hover { background: #ffbe30; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(240,165,0,0.3); }
+
+  /* ─── QUIZ SCREEN ──────────────────────────── */
+  .quiz-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(240,165,0,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(240,165,0,0.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .q-counter {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 8px;
+  }
+  .q-text {
+    font-size: 1.18rem;
+    font-weight: 500;
+    line-height: 1.55;
+    margin-bottom: 28px;
+    color: var(--text);
+  }
+  .q-code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: #e3b341;
+    margin: 12px 0 20px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+    color: var(--blue);
+    margin: 12px 0 20px;
+  }
+  .options-list { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.96rem;
+    color: var(--text);
+    transition: all 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    line-height: 1.5;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.06);
+    transform: translateX(2px);
+  }
+  .option-btn:disabled { cursor: default; }
+  .option-btn.selected { border-color: var(--accent); background: rgba(240,165,0,0.08); }
+  .option-btn.correct { border-color: var(--green); background: var(--correct-bg); color: #7ee787; }
+  .option-btn.wrong { border-color: var(--red); background: var(--wrong-bg); color: #f87171; }
+  .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .option-btn.correct .option-letter { background: var(--green); border-color: var(--green); color: #000; }
+  .option-btn.wrong .option-letter { background: var(--red); border-color: var(--red); color: #fff; }
+  .option-btn.selected .option-letter { background: var(--accent); border-color: var(--accent); color: #000; }
+
+  /* ─── EXPLANATION ──────────────────────────── */
+  .explanation {
+    display: none;
+    margin-top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-size: 0.93rem;
+    line-height: 1.65;
+    color: #a8d8f0;
+    animation: slideDown 0.3s ease;
+  }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--blue); font-weight: 600; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ─── NAVIGATION ───────────────────────────── */
+  .nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32px;
+    gap: 12px;
+  }
+  .btn-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-nav.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+  .btn-nav.primary:hover { background: #ffbe30; box-shadow: 0 4px 14px rgba(240,165,0,0.3); }
+  .btn-nav:disabled { opacity: 0.3; cursor: default; }
+  .q-status {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── DATA TABLE ────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px;
+    font-size: 0.92rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .data-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 8px 14px;
+    text-align: center;
+    border: 1px solid var(--border);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+  }
+  .data-table td {
+    padding: 8px 14px;
+    text-align: center;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .data-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* ─── RESULTS SCREEN ────────────────────────── */
+  .results-wrap {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 24px 80px;
+  }
+  .score-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .score-ring {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .track { fill: none; stroke: var(--border); stroke-width: 10; }
+  .score-ring .fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.2s ease; }
+  .score-pct {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+  }
+  .score-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+  .score-label em { color: var(--accent); font-style: italic; }
+  .score-counts {
+    display: flex;
+    justify-content: center;
+    gap: 36px;
+    margin-top: 20px;
+  }
+  .sc-item { text-align: center; }
+  .sc-item .n {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+  }
+  .sc-item .n.g { color: var(--green); }
+  .sc-item .n.r { color: var(--red); }
+  .sc-item .l { color: var(--text-muted); font-size: 0.82rem; font-weight: 500; }
+  .section-breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .breakdown-head {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    gap: 14px;
+    font-size: 0.9rem;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row .sec-title { flex: 1; }
+  .breakdown-bar-wrap { width: 120px; height: 6px; background: var(--border); border-radius: 3px; }
+  .breakdown-bar { height: 100%; border-radius: 3px; }
+  .breakdown-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    width: 48px;
+    text-align: right;
+  }
+  .review-section { margin-bottom: 28px; }
+  .review-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .review-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+  }
+  .review-item.correct { border-left-color: var(--green); }
+  .review-item .ri-q { color: var(--text); margin-bottom: 6px; font-weight: 500; }
+  .review-item .ri-ans { color: var(--text-muted); margin-bottom: 4px; font-size: 0.82rem; }
+  .review-item .ri-expl { color: #a8d8f0; font-size: 0.82rem; line-height: 1.5; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+  .grade-badge {
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  .btn-restart {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.96rem;
+    padding: 13px 30px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-restart:hover { background: #ffbe30; }
+
+  /* ─── SCROLLBAR ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="header" id="appHeader" style="display:none">
+  <div class="header-title">Linear Regression · Quiz</div>
+  <div class="header-meta">
+    <span id="qProgressText">Q 1 / 37</span>
+    <div class="timer" id="timer">45:00</div>
+  </div>
+</div>
+<div class="progress-bar-wrap" id="progressBarWrap" style="display:none">
+  <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+</div>
+
+<!-- ═══════════════ START SCREEN ═══════════════ -->
+<div class="screen active" id="startScreen">
+  <div class="start-wrap">
+    <div class="start-badge">📐 Machine Learning Fundamentals</div>
+    <h1 class="start-title">Linear Regression<br><em>Gradient Descent</em> Quiz</h1>
+    <p class="start-subtitle">Test your understanding of the hypothesis, cost function, gradient descent, learning rate, and more — with hands-on computation.</p>
+
+    <div class="info-grid">
+      <div class="info-card"><span class="num">37</span><span class="label">Questions</span></div>
+      <div class="info-card"><span class="num">45</span><span class="label">Minutes</span></div>
+      <div class="info-card"><span class="num">7</span><span class="label">Sections</span></div>
+    </div>
+
+    <div class="sections-list">
+      <h3>What's Covered</h3>
+      <div class="section-row"><div class="sec-num">1</div>Hypothesis Function &amp; Parameters<div class="sec-count">5 Qs</div></div>
+      <div class="section-row"><div class="sec-num">2</div>Cost Function<div class="sec-count">5 Qs</div></div>
+      <div class="section-row"><div class="sec-num">3</div>Gradient Descent Intuition<div class="sec-count">6 Qs</div></div>
+      <div class="section-row"><div class="sec-num">4</div>Learning Rate (α)<div class="sec-count">5 Qs</div></div>
+      <div class="section-row"><div class="sec-num">5</div>Manual Computation (2–3 passes)<div class="sec-count">7 Qs</div></div>
+      <div class="section-row"><div class="sec-num">6</div>Programming (Python)<div class="sec-count">4 Qs</div></div>
+      <div class="section-row"><div class="sec-num">7</div>Batch vs. Mini-batch vs. SGD<div class="sec-count">5 Qs</div></div>
+    </div>
+
+    <button class="btn-start" onclick="startQuiz()">▶ &nbsp;Start Quiz</button>
+  </div>
+</div>
+
+<!-- ═══════════════ QUIZ SCREEN ═══════════════ -->
+<div class="screen" id="quizScreen">
+  <div class="quiz-wrap">
+    <div class="section-tag" id="sectionTag">Section 1</div>
+    <div class="q-counter" id="qCounter">Question 1 of 37</div>
+    <div class="q-text" id="qText"></div>
+    <div id="qExtra"></div>
+    <div class="options-list" id="optionsList"></div>
+    <div class="explanation" id="explanation"></div>
+    <div class="nav-row">
+      <button class="btn-nav" id="btnPrev" onclick="prevQ()" disabled>← Prev</button>
+      <span class="q-status" id="qStatus">Not answered</span>
+      <button class="btn-nav primary" id="btnNext" onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ RESULTS SCREEN ═══════════════ -->
+<div class="screen" id="resultsScreen">
+  <div class="results-wrap">
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 120 120" width="140" height="140">
+          <circle class="track" cx="60" cy="60" r="50"/>
+          <circle class="fill" id="scoreArc" cx="60" cy="60" r="50"
+            stroke-dasharray="314"
+            stroke-dashoffset="314"/>
+        </svg>
+        <div class="score-pct" id="scorePct">0%</div>
+      </div>
+      <div class="score-label" id="scoreLabel">Well done!</div>
+      <div id="gradeBadgeWrap"></div>
+      <div class="score-counts">
+        <div class="sc-item"><div class="n g" id="correctCount">0</div><div class="l">Correct</div></div>
+        <div class="sc-item"><div class="n r" id="wrongCount">0</div><div class="l">Wrong</div></div>
+        <div class="sc-item"><div class="n" id="totalCount">37</div><div class="l">Total</div></div>
+      </div>
+    </div>
+
+    <div class="section-breakdown">
+      <div class="breakdown-head">Section Breakdown</div>
+      <div id="breakdownRows"></div>
+    </div>
+
+    <div class="review-section">
+      <h3>❌ Questions to Review</h3>
+      <div id="reviewList"></div>
+    </div>
+
+    <div style="text-align:center">
+      <button class="btn-restart" onclick="restartQuiz()">↺ &nbsp;Restart Quiz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  QUESTION DATA
+// ═══════════════════════════════════════════════════
+const questions = [
+  // ── SECTION 1: Hypothesis & Parameters ──────────
+  {
+    section:"§1 · Hypothesis & Model", sid:0,
+    text:"In linear regression, what does the hypothesis function hθ(x) = θ₀ + θ₁x represent?",
+    options:[
+      "The actual output (label) given in the training data",
+      "Our model's predicted output for a given input x",
+      "The error between prediction and actual value",
+      "The cost we want to minimize"
+    ],
+    answer:1,
+    explain:"hθ(x) is our model's <strong>prediction</strong> — the estimated output for input x, given the current parameters θ₀ and θ₁. It is NOT the real label y."
+  },
+  {
+    section:"§1 · Hypothesis & Model", sid:0,
+    text:"In hθ(x) = θ₀ + θ₁x, what do θ₀ and θ₁ represent geometrically?",
+    options:[
+      "θ₀ is the slope; θ₁ is the y-intercept",
+      "θ₀ is the y-intercept (bias); θ₁ is the slope",
+      "Both are slopes for different features",
+      "θ₀ is the error; θ₁ is the correction factor"
+    ],
+    answer:1,
+    explain:"θ₀ is the <strong>y-intercept</strong> (where the line crosses the y-axis when x=0) and θ₁ is the <strong>slope</strong> (how much y changes per unit change in x)."
+  },
+  {
+    section:"§1 · Hypothesis & Model", sid:0,
+    text:"If θ₀ = 2 and θ₁ = 3, what is the prediction for x = 4?",
+    options:["9","12","14","10"],
+    answer:2,
+    explain:"hθ(4) = θ₀ + θ₁ × 4 = 2 + 3 × 4 = 2 + 12 = <strong>14</strong>."
+  },
+  {
+    section:"§1 · Hypothesis & Model", sid:0,
+    text:"Linear regression assumes the relationship between input x and output y is:",
+    options:["Quadratic (a parabola)","Linear (a straight line)","Exponential","Sinusoidal"],
+    answer:1,
+    explain:"'Linear' regression specifically fits a <strong>straight line</strong> to the data. If the true relationship is curved, linear regression won't capture it well."
+  },
+  {
+    section:"§1 · Hypothesis & Model", sid:0,
+    text:"Which of these best describes what 'training' a linear regression model means?",
+    options:[
+      "Drawing the best line by hand on paper",
+      "Adjusting θ₀ and θ₁ iteratively to minimize the cost function J",
+      "Increasing the dataset size",
+      "Normalizing all input features to [0,1]"
+    ],
+    answer:1,
+    explain:"Training = finding the optimal <strong>θ₀ and θ₁</strong> by minimizing J(θ₀, θ₁) using an algorithm like gradient descent."
+  },
+
+  // ── SECTION 2: Cost Function ─────────────────────
+  {
+    section:"§2 · Cost Function", sid:1,
+    text:"In J(θ₀,θ₁) = (1/2m) Σ (hθ(xⁱ) − yⁱ)², what does (hθ(xⁱ) − yⁱ) represent?",
+    options:[
+      "The learning rate for sample i",
+      "The prediction for sample i",
+      "The residual error — how far the prediction is from the true value for sample i",
+      "The gradient at sample i"
+    ],
+    answer:2,
+    explain:"(hθ(xⁱ) − yⁱ) is the <strong>residual error</strong> for the i-th example. If prediction = 7 and true value = 5, the error is +2."
+  },
+  {
+    section:"§2 · Cost Function", sid:1,
+    text:"Why do we SQUARE the error term (hθ(xⁱ) − yⁱ)² in the cost function?",
+    options:[
+      "To make the math more complicated",
+      "So positive and negative errors don't cancel out, and to penalize larger errors more heavily",
+      "Because squaring always gives a smaller number",
+      "It is just a convention with no mathematical reason"
+    ],
+    answer:1,
+    explain:"Squaring ensures <strong>negative errors don't cancel positive ones</strong>, and penalizes large errors more (error of 10 → cost 100, vs error of 1 → cost 1). It also makes J smooth and differentiable."
+  },
+  {
+    section:"§2 · Cost Function", sid:1,
+    text:"Why is there a (1/2m) factor in J(θ₀,θ₁) = (1/2m) Σ (...)²?",
+    options:[
+      "1/m averages cost over all m examples; 1/2 makes the derivative cleaner (cancels with the power of 2)",
+      "It makes the cost function negative",
+      "It is needed to make the sum equal to 1",
+      "1/2m is a regularization penalty"
+    ],
+    answer:0,
+    explain:"<strong>1/m</strong> normalizes across dataset size so J doesn't grow with more data. The <strong>1/2</strong> is a convenience: when you differentiate (error)², the chain rule gives 2 × error, and 1/2 × 2 = 1 — simplifying the gradient formula."
+  },
+  {
+    section:"§2 · Cost Function", sid:1,
+    text:"If J(θ₀,θ₁) = 0, what does that mean?",
+    options:[
+      "The model failed to learn anything",
+      "The model perfectly predicts every training example (zero error on all points)",
+      "The learning rate α is too small",
+      "We need more training data"
+    ],
+    answer:1,
+    explain:"J = 0 means every prediction exactly equals its true value — perfect fit. While mathematically ideal, in practice this can indicate overfitting."
+  },
+  {
+    section:"§2 · Cost Function", sid:1,
+    text:"The shape of the cost function J plotted against θ (as drawn on the board) looks like a U-shape (convex bowl). What is significant about this shape?",
+    options:[
+      "It means gradient descent will always diverge",
+      "There are many local minima, making optimization hard",
+      "There is exactly ONE global minimum — gradient descent is guaranteed to find it",
+      "The cost function is always flat at zero"
+    ],
+    answer:2,
+    explain:"For linear regression, J is a <strong>convex function</strong> (bowl-shaped). This guarantees a single global minimum — gradient descent will always converge to the optimal solution (if α is chosen correctly)."
+  },
+
+  // ── SECTION 3: Gradient Descent Intuition ─────────
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"Why do we take the DERIVATIVE (∂J/∂θ) in gradient descent?",
+    options:[
+      "To find the value of J directly at the minimum",
+      "Because the derivative gives the slope — telling us which direction to nudge θ to decrease J fastest",
+      "To square the error term in the cost function",
+      "Derivatives help increase the cost function"
+    ],
+    answer:1,
+    explain:"The derivative at a point tells you the <strong>slope of J</strong>. A positive slope means increasing θ increases J — so to decrease J, you move in the opposite direction (subtract). The gradient is your compass."
+  },
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"Update rule: θ₁ := θ₁ − α · (∂J/∂θ₁). If the slope ∂J/∂θ₁ is POSITIVE, θ₁ will:",
+    options:[
+      "Increase (move right)",
+      "Decrease (move left, toward the minimum)",
+      "Stay the same",
+      "Jump directly to the minimum"
+    ],
+    answer:1,
+    explain:"θ₁_new = θ₁ − α × (positive) → θ₁ <strong>decreases</strong>. Visually: on the right side of the bowl, slope is positive, so we move left — toward the bottom. ✓"
+  },
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"The best everyday analogy for gradient descent is:",
+    options:[
+      "Jumping to the valley floor with a parachute",
+      "Taking small careful steps downhill, always in the steepest downward direction",
+      "Randomly wandering until you stumble on the lowest point",
+      "Climbing to the top of a mountain to find the valley"
+    ],
+    answer:1,
+    explain:"Gradient descent is like <strong>hiking downhill</strong> — at each step you look around, find the steepest downward direction (the negative gradient), and take a step that way. Repeat until you reach the bottom (minimum)."
+  },
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"At the minimum of J(θ₀,θ₁), what is true about ∂J/∂θ₀ and ∂J/∂θ₁?",
+    options:[
+      "Both are very large positive numbers",
+      "Both equal zero — the slope is flat at the bottom of the bowl",
+      "One is positive and one is negative",
+      "They are undefined at the minimum"
+    ],
+    answer:1,
+    explain:"At the minimum, the surface is <strong>perfectly flat</strong> — zero slope in all directions. This means the update terms (α × gradient) are zero, and θ₀, θ₁ stop changing. Convergence achieved! ✓"
+  },
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"Why must θ₀ and θ₁ be updated SIMULTANEOUSLY (at the same time)?",
+    options:[
+      "It runs faster on computers",
+      "Using old values of both θs to compute both updates ensures the gradient is computed at a consistent point",
+      "The order of updates doesn't matter at all",
+      "Simultaneous update always gives a larger cost reduction"
+    ],
+    answer:1,
+    explain:"If you updated θ₀ first and then used the <strong>new θ₀</strong> to compute ∂J/∂θ₁, you'd be computing the gradient at a different (mixed) point — mathematically inconsistent. Simultaneous update preserves correctness."
+  },
+  {
+    section:"§3 · Gradient Descent Intuition", sid:2,
+    text:"Which Python code snippet correctly implements SIMULTANEOUS update?",
+    code:`# Option A (Simultaneous):
+temp0 = theta0 - alpha * grad0
+temp1 = theta1 - alpha * grad1
+theta0 = temp0
+theta1 = temp1
+
+# Option B (Sequential — WRONG):
+theta0 = theta0 - alpha * grad0
+theta1 = theta1 - alpha * recompute_grad1(theta0, theta1)`,
+    options:[
+      "Option A — compute both temps first, then assign",
+      "Option B — update theta0 first, then use it to recompute grad1",
+      "Both A and B are equivalent",
+      "Neither is correct"
+    ],
+    answer:0,
+    explain:"<strong>Option A</strong> is correct. Both temp values are computed using the <em>old</em> θ₀ and θ₁, then both are assigned. Option B violates simultaneous update by using an updated θ₀ to compute the second gradient."
+  },
+
+  // ── SECTION 4: Learning Rate ───────────────────────
+  {
+    section:"§4 · Learning Rate (α)", sid:3,
+    text:"What happens if the learning rate α is too LARGE?",
+    options:[
+      "The algorithm converges slowly but safely",
+      "The algorithm may overshoot the minimum and diverge — cost oscillates or keeps increasing",
+      "The parameters θ never change",
+      "It always finds the perfect minimum quickly"
+    ],
+    answer:1,
+    explain:"A large α = huge steps. You <strong>overshoot</strong> the minimum, bounce to the other side, overshoot again… and the cost function may spiral upward instead of converging. Think of it like trying to park a car by flooring the gas."
+  },
+  {
+    section:"§4 · Learning Rate (α)", sid:3,
+    text:"What happens if the learning rate α is too SMALL?",
+    options:[
+      "The algorithm diverges immediately",
+      "Convergence is correct but extremely slow — may take millions of iterations",
+      "The algorithm finds a better, more accurate minimum",
+      "The cost function becomes negative"
+    ],
+    answer:1,
+    explain:"Tiny α = baby steps. The algorithm will eventually converge, but it could take an <strong>enormous number of iterations</strong> to get there. Imagine walking to a destination 1 mm at a time."
+  },
+  {
+    section:"§4 · Learning Rate (α)", sid:3,
+    text:"Which α value would you most likely try FIRST when implementing gradient descent?",
+    options:["0.000000001","10000","0.01 or 0.1","Always exactly 1.0"],
+    answer:2,
+    explain:"Typical starting values are <strong>0.001, 0.01, or 0.1</strong>. You then monitor J vs. iterations: if it oscillates, reduce α; if it's too slow, increase α. Grid search or learning rate schedules help find the best value."
+  },
+  {
+    section:"§4 · Learning Rate (α)", sid:3,
+    text:"As gradient descent approaches the minimum, step sizes automatically get smaller even though α stays constant. Why?",
+    options:[
+      "The computer slows down near the minimum",
+      "Step size = α × gradient. Near the minimum, the gradient approaches 0, so steps shrink naturally",
+      "α secretly decreases itself",
+      "The cost function reverses sign near the minimum"
+    ],
+    answer:1,
+    explain:"<strong>Step size = α × |∂J/∂θ|</strong>. Near the minimum the surface is nearly flat — gradient ≈ 0 — so steps shrink automatically. This is an elegant, built-in property: gradient descent naturally 'slows down' as it homes in on the minimum."
+  },
+  {
+    section:"§4 · Learning Rate (α)", sid:3,
+    text:"You plot J vs. iteration number and see J going UP after each step. The most likely cause is:",
+    options:[
+      "The training data has outliers",
+      "The learning rate α is too large — overshooting the minimum",
+      "The model has too many features",
+      "The training set is too small"
+    ],
+    answer:1,
+    explain:"Increasing loss = classic sign of α being <strong>too large</strong>. The fix: reduce α by 10x and observe whether J now decreases monotonically."
+  },
+
+  // ── SECTION 5: Manual Computation ──────────────────
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"SETUP — Read carefully before answering Q22–28:\n\nData: x = [1, 2, 3],  y = [2, 4, 6]\nInitial parameters: θ₀ = 0,  θ₁ = 0\nLearning rate: α = 0.1,  m = 3\n\n─── PASS 1 ───\nCompute hθ(xⁱ) for all three training examples.",
+    tableData:{ headers:["i","xⁱ","yⁱ","hθ(xⁱ) = θ₀ + θ₁·xⁱ"], rows:[["1","1","2","?"],["2","2","4","?"],["3","3","6","?"]] },
+    options:[
+      "Predictions = [1, 2, 3]",
+      "Predictions = [0, 0, 0]",
+      "Predictions = [2, 4, 6]",
+      "Predictions = [0.5, 1.0, 1.5]"
+    ],
+    answer:1,
+    explain:"hθ(x) = 0 + 0·x = <strong>0</strong> for all x. When θ₀ = θ₁ = 0, every prediction is zero — our model hasn't learned anything yet."
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"Pass 1 (θ₀=0, θ₁=0). Predictions = [0, 0, 0], y = [2, 4, 6].\n\nCompute J(θ₀,θ₁) = (1/2m) Σ (hθ(xⁱ) − yⁱ)²",
+    options:[
+      "J = (1/6) × 56 ≈ 9.33",
+      "J = 12.00",
+      "J = 0",
+      "J = 56"
+    ],
+    answer:0,
+    explain:"Errors²: (0−2)² = 4, (0−4)² = 16, (0−6)² = 36. Sum = 56. J = (1/6) × 56 = <strong>9.33</strong>. (Note: 2m = 2×3 = 6)"
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"Pass 1 gradients. Errors = [−2, −4, −6].\n\n∂J/∂θ₀ = (1/m) Σ (hθ(xⁱ) − yⁱ)\nCompute ∂J/∂θ₀:",
+    options:[
+      "∂J/∂θ₀ = −4",
+      "∂J/∂θ₀ = +12",
+      "∂J/∂θ₀ = 0",
+      "∂J/∂θ₀ = +4"
+    ],
+    answer:0,
+    explain:"Sum of errors = −2 + (−4) + (−6) = −12. ∂J/∂θ₀ = (1/3) × (−12) = <strong>−4</strong>. Negative gradient → θ₀ will increase (move upward)."
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"Pass 1 gradients. Errors = [−2, −4, −6], x = [1, 2, 3].\n\n∂J/∂θ₁ = (1/m) Σ (hθ(xⁱ) − yⁱ) · xⁱ\nCompute ∂J/∂θ₁:",
+    options:[
+      "∂J/∂θ₁ = −28/3 ≈ −9.33",
+      "∂J/∂θ₁ = +9.33",
+      "∂J/∂θ₁ = −12",
+      "∂J/∂θ₁ = −4"
+    ],
+    answer:0,
+    explain:"(−2×1) + (−4×2) + (−6×3) = −2 − 8 − 18 = −28. ∂J/∂θ₁ = (1/3) × (−28) = <strong>−9.33</strong>. Both gradients are negative → both θs will increase."
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"Update: θ := θ − α × gradient, with α = 0.1\n∂J/∂θ₀ = −4,  ∂J/∂θ₁ = −9.33\nθ₀(old) = 0,  θ₁(old) = 0\n\nWhat are the NEW values of θ₀ and θ₁?",
+    options:[
+      "θ₀ = 0.4,  θ₁ = 0.933",
+      "θ₀ = −0.4,  θ₁ = −0.933",
+      "θ₀ = 0.04,  θ₁ = 0.093",
+      "θ₀ = 4,  θ₁ = 9.33"
+    ],
+    answer:0,
+    explain:"θ₀ = 0 − 0.1 × (−4) = 0 + 0.4 = <strong>0.4</strong>. θ₁ = 0 − 0.1 × (−9.33) = 0 + 0.933 = <strong>0.933</strong>. Subtracting a negative = adding. Both θs increased — we moved toward the true line y = 2x!"
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"After Pass 1 update (θ₀ = 0.4, θ₁ = 0.933), the new predictions for x = [1, 2, 3] are approximately [1.333, 2.267, 3.2]. The new cost J ≈ 1.88. What happened to J?",
+    options:[
+      "J increased from 9.33 to 1.88 — gradient descent moved in the wrong direction",
+      "J decreased from 9.33 to 1.88 — gradient descent moved us closer to the minimum ✓",
+      "J stayed exactly the same",
+      "J became negative"
+    ],
+    answer:1,
+    explain:"J dropped from 9.33 → <strong>1.88</strong> after just one update! Gradient descent is working — each step reduces the cost. After many iterations, θ₀ will approach 0 and θ₁ will approach 2 (the true parameters of y = 2x)."
+  },
+  {
+    section:"§5 · Manual Computation", sid:4,
+    text:"We keep running gradient descent on data x=[1,2,3], y=[2,4,6]. As iterations → ∞, what values will θ₀ and θ₁ converge to?",
+    options:[
+      "θ₀ → 1, θ₁ → 1",
+      "θ₀ → 0, θ₁ → 2  (because y = 0 + 2x fits perfectly)",
+      "θ₀ → 2, θ₁ → 0",
+      "θ₀ → 3, θ₁ → 3"
+    ],
+    answer:1,
+    explain:"y = 2, 4, 6 when x = 1, 2, 3 → the pattern is y = 2x, i.e., <strong>θ₀ = 0, θ₁ = 2</strong>. Gradient descent converges to these true parameters, making J → 0."
+  },
+
+  // ── SECTION 6: Programming ──────────────────────────
+  {
+    section:"§6 · Programming (Python)", sid:5,
+    text:"Which Python code correctly applies the gradient descent update for θ₀?",
+    code:`# A:  theta0 = theta0 + alpha * grad0
+# B:  theta0 = theta0 - alpha * grad0
+# C:  theta0 = grad0 / alpha
+# D:  theta0 = alpha - theta0 * grad0`,
+    options:[
+      "A — add the gradient",
+      "B — subtract the scaled gradient",
+      "C — divide gradient by alpha",
+      "D — none of these make sense"
+    ],
+    answer:1,
+    explain:"The update rule is θ := θ − α × ∂J/∂θ. In Python: <code>theta0 = theta0 - alpha * grad0</code>. We always <strong>subtract</strong> (not add) the gradient."
+  },
+  {
+    section:"§6 · Programming (Python)", sid:5,
+    text:"What is the bug in this code?",
+    code:`theta0 = theta0 - alpha * compute_grad0(theta0, theta1)
+theta1 = theta1 - alpha * compute_grad1(theta0, theta1)
+#                                         ↑ uses updated theta0!`,
+    options:[
+      "Nothing is wrong — this is correct gradient descent",
+      "Line 2 uses the already-updated theta0 to compute grad1 — violates simultaneous update",
+      "Alpha should be added, not subtracted",
+      "Gradients should be squared before subtracting"
+    ],
+    answer:1,
+    explain:"Line 2 passes the <strong>new theta0</strong> to compute_grad1. This changes the point at which the gradient is computed — breaking the simultaneous update rule. Fix: compute both grads first with old values, then update both."
+  },
+  {
+    section:"§6 · Programming (Python)", sid:5,
+    text:"Given numpy arrays, which line correctly computes predictions h_θ(x)?",
+    code:`import numpy as np
+X = np.array([1, 2, 3])
+y = np.array([2, 4, 6])
+theta0, theta1 = 0.4, 0.933`,
+    options:[
+      "predictions = theta0 * X + theta1",
+      "predictions = theta0 + theta1 * X",
+      "predictions = theta1 / (theta0 + X)",
+      "predictions = np.sum(theta0 + theta1)"
+    ],
+    answer:1,
+    explain:"hθ(x) = θ₀ + θ₁·x → Python: <code>predictions = theta0 + theta1 * X</code>. NumPy broadcasts this element-wise over the entire X array, giving predictions for all training examples at once."
+  },
+  {
+    section:"§6 · Programming (Python)", sid:5,
+    text:"What do these three lines compute?",
+    code:`errors     = predictions - y
+grad0      = np.mean(errors)
+grad1      = np.mean(errors * X)`,
+    options:[
+      "The cost function J(θ₀, θ₁)",
+      "The gradients ∂J/∂θ₀ and ∂J/∂θ₁ for batch gradient descent",
+      "The learning rate α",
+      "The number of training examples m"
+    ],
+    answer:1,
+    explain:"<code>np.mean(errors)</code> = (1/m)Σ(hθ(xⁱ)−yⁱ) = <strong>∂J/∂θ₀</strong>. <code>np.mean(errors * X)</code> = (1/m)Σ(hθ(xⁱ)−yⁱ)·xⁱ = <strong>∂J/∂θ₁</strong>. This is batch gradient descent — using ALL m examples per update."
+  },
+
+  // ── SECTION 7: Batch vs Mini-batch vs SGD ─────────
+  {
+    section:"§7 · Batch vs Mini-batch vs SGD", sid:6,
+    text:"In BATCH Gradient Descent, how many training examples are used to compute the gradient for each parameter update?",
+    options:[
+      "1 randomly chosen example per update",
+      "A random subset (e.g., 32–256 examples)",
+      "ALL m training examples — the full dataset",
+      "Only the incorrectly predicted examples"
+    ],
+    answer:2,
+    explain:"<strong>Batch GD</strong> uses ALL m examples to compute one gradient update. Pros: smooth, accurate gradient. Cons: slow and memory-intensive for large datasets."
+  },
+  {
+    section:"§7 · Batch vs Mini-batch vs SGD", sid:6,
+    text:"In STOCHASTIC Gradient Descent (SGD), the gradient is computed using:",
+    options:[
+      "All m training examples",
+      "A batch of 32–256 randomly chosen examples",
+      "Just 1 randomly chosen training example per update",
+      "The training example with the highest current error"
+    ],
+    answer:2,
+    explain:"<strong>SGD</strong> uses just <strong>1 example</strong> per update. This makes each update very fast, but the gradient estimate is very noisy — the path to the minimum is erratic (like a drunk person walking downhill)."
+  },
+  {
+    section:"§7 · Batch vs Mini-batch vs SGD", sid:6,
+    text:"Mini-Batch Gradient Descent is considered the best of both worlds because:",
+    options:[
+      "It requires zero memory and zero computation",
+      "Using a small batch (e.g., 32–256) is more stable than SGD while being much faster than full-batch — and it exploits GPU parallelism",
+      "It always finds the perfect global minimum in one step",
+      "It eliminates the need for a learning rate"
+    ],
+    answer:1,
+    explain:"<strong>Mini-batch GD</strong> balances: more stable gradients than SGD (averaging over 32–256 examples reduces noise), faster than full-batch GD (less computation per update), and GPU-friendly (matrices fit nicely in hardware). It's the standard in deep learning."
+  },
+  {
+    section:"§7 · Batch vs Mini-batch vs SGD", sid:6,
+    text:"Which method produces the NOISIEST (most erratic, zigzag) path toward the minimum during training?",
+    options:[
+      "Batch Gradient Descent",
+      "Mini-Batch Gradient Descent",
+      "Stochastic Gradient Descent (SGD)",
+      "They all follow identical paths"
+    ],
+    answer:2,
+    explain:"<strong>SGD</strong> uses 1 example — its gradient is the noisiest estimate. The path zigzags wildly, though it converges on average. Batch GD takes smooth, confident steps straight toward the minimum."
+  },
+  {
+    section:"§7 · Batch vs Mini-batch vs SGD", sid:6,
+    text:"You are training on a dataset with 10,000,000 examples. Which approach is most practical?",
+    options:[
+      "Full Batch GD — compute gradient over all 10M examples before each update",
+      "Mini-Batch GD (batch size 256) — compute fast approximate gradient, update many times per pass through data",
+      "Never use gradient descent on datasets larger than 10,000 examples",
+      "Always use exactly half the data (5M examples) per update"
+    ],
+    answer:1,
+    explain:"With 10M examples, computing the full batch gradient once is extremely expensive. <strong>Mini-Batch GD</strong> (batch size 64–512) makes ~39,000 updates per epoch instead of 1 — learning vastly faster. This is why all modern deep learning uses mini-batches."
+  }
+];
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let currentQ = 0;
+let userAnswers = new Array(questions.length).fill(null);
+let timerInterval = null;
+let secondsLeft = 45 * 60;
+let quizStarted = false;
+
+// ═══════════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════════
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2,'0');
+  const sec = (s % 60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
+function startTimer() {
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    document.getElementById('timer').textContent = formatTime(secondsLeft);
+    if (secondsLeft <= 300) document.getElementById('timer').classList.add('urgent');
+    if (secondsLeft <= 0) { clearInterval(timerInterval); showResults(); }
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════
+function startQuiz() {
+  quizStarted = true;
+  document.getElementById('startScreen').classList.remove('active');
+  document.getElementById('quizScreen').classList.add('active');
+  document.getElementById('appHeader').style.display = 'flex';
+  document.getElementById('progressBarWrap').style.display = 'block';
+  startTimer();
+  renderQuestion();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER QUESTION
+// ═══════════════════════════════════════════════════
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+
+  // Header
+  document.getElementById('qProgressText').textContent = `Q ${currentQ+1} / ${total}`;
+  document.getElementById('progressBar').style.width = `${((currentQ+1)/total)*100}%`;
+
+  // Section tag
+  document.getElementById('sectionTag').textContent = q.section;
+  document.getElementById('qCounter').textContent = `Question ${currentQ+1} of ${total}`;
+
+  // Question text (handle newlines)
+  document.getElementById('qText').innerHTML = q.text.replace(/\n/g,'<br>');
+
+  // Extra content (code or table)
+  const extra = document.getElementById('qExtra');
+  extra.innerHTML = '';
+  if (q.code) {
+    const d = document.createElement('div');
+    d.className = 'q-code';
+    d.textContent = q.code;
+    extra.appendChild(d);
+  }
+  if (q.tableData) {
+    const t = document.createElement('table');
+    t.className = 'data-table';
+    const thead = document.createElement('thead');
+    const hrow = document.createElement('tr');
+    q.tableData.headers.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      hrow.appendChild(th);
+    });
+    thead.appendChild(hrow);
+    t.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    q.tableData.rows.forEach(row => {
+      const tr = document.createElement('tr');
+      row.forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    t.appendChild(tbody);
+    extra.appendChild(t);
+  }
+
+  // Options
+  const letters = ['A','B','C','D'];
+  const list = document.getElementById('optionsList');
+  list.innerHTML = '';
+  const answered = userAnswers[currentQ] !== null;
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    if (answered) {
+      btn.disabled = true;
+      if (i === q.answer) btn.classList.add('correct');
+      else if (i === userAnswers[currentQ]) btn.classList.add('wrong');
+    } else {
+      btn.onclick = () => selectAnswer(i);
+    }
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    list.appendChild(btn);
+  });
+
+  // Explanation
+  const exp = document.getElementById('explanation');
+  if (answered) {
+    exp.innerHTML = `<strong>💡 Explanation:</strong> ${q.explain}`;
+    exp.classList.add('show');
+  } else {
+    exp.classList.remove('show');
+    exp.innerHTML = '';
+  }
+
+  // Status
+  const status = document.getElementById('qStatus');
+  if (!answered) status.textContent = 'Not answered';
+  else if (userAnswers[currentQ] === q.answer) status.textContent = '✓ Correct';
+  else status.textContent = '✗ Incorrect';
+
+  // Nav buttons
+  document.getElementById('btnPrev').disabled = currentQ === 0;
+  const nextBtn = document.getElementById('btnNext');
+  if (currentQ === total - 1) {
+    nextBtn.textContent = 'Finish Quiz →';
+    nextBtn.onclick = showResults;
+  } else {
+    nextBtn.textContent = 'Next →';
+    nextBtn.onclick = nextQ;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  ANSWER SELECTION
+// ═══════════════════════════════════════════════════
+function selectAnswer(i) {
+  userAnswers[currentQ] = i;
+  renderQuestion();
+}
+
+function nextQ() {
+  if (currentQ < questions.length - 1) { currentQ++; renderQuestion(); window.scrollTo(0,0); }
+}
+function prevQ() {
+  if (currentQ > 0) { currentQ--; renderQuestion(); window.scrollTo(0,0); }
+}
+
+// ═══════════════════════════════════════════════════
+//  RESULTS
+// ═══════════════════════════════════════════════════
+function showResults() {
+  clearInterval(timerInterval);
+  document.getElementById('quizScreen').classList.remove('active');
+  document.getElementById('resultsScreen').classList.add('active');
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('progressBarWrap').style.display = 'none';
+
+  // Tally
+  let correct = 0;
+  questions.forEach((q,i) => { if (userAnswers[i] === q.answer) correct++; });
+  const total = questions.length;
+  const pct = Math.round((correct / total) * 100);
+
+  // Score ring
+  const arc = document.getElementById('scoreArc');
+  const circumference = 314;
+  const offset = circumference - (pct / 100) * circumference;
+  arc.style.strokeDashoffset = offset;
+  const color = pct >= 80 ? '#3fb950' : pct >= 60 ? '#f0a500' : '#f85149';
+  arc.style.stroke = color;
+
+  document.getElementById('scorePct').textContent = pct + '%';
+  document.getElementById('scorePct').style.color = color;
+  document.getElementById('correctCount').textContent = correct;
+  document.getElementById('wrongCount').textContent = total - correct;
+  document.getElementById('totalCount').textContent = total;
+
+  // Grade
+  let grade, gradeColor;
+  if (pct >= 90) { grade = 'Excellent! ★'; gradeColor = '#3fb950'; }
+  else if (pct >= 75) { grade = 'Good Work! ✓'; gradeColor = '#f0a500'; }
+  else if (pct >= 60) { grade = 'Satisfactory'; gradeColor = '#58a6ff'; }
+  else { grade = 'Needs Review'; gradeColor = '#f85149'; }
+  document.getElementById('scoreLabel').innerHTML = `You scored <em>${pct}%</em>`;
+  document.getElementById('gradeBadgeWrap').innerHTML = `<span class="grade-badge" style="background:${gradeColor}22;color:${gradeColor};border:1px solid ${gradeColor}44">${grade}</span>`;
+
+  // Section breakdown
+  const sectionNames = [
+    "§1 · Hypothesis & Model",
+    "§2 · Cost Function",
+    "§3 · Gradient Descent",
+    "§4 · Learning Rate",
+    "§5 · Manual Computation",
+    "§6 · Programming",
+    "§7 · Batch/SGD"
+  ];
+  const sectionCounts = [5,5,6,5,7,4,5];
+  const breakdownEl = document.getElementById('breakdownRows');
+  breakdownEl.innerHTML = '';
+  let offset2 = 0;
+  sectionNames.forEach((sname, si) => {
+    const count = sectionCounts[si];
+    let secCorrect = 0;
+    for (let k = offset2; k < offset2 + count; k++) {
+      if (userAnswers[k] === questions[k].answer) secCorrect++;
+    }
+    const secPct = Math.round((secCorrect / count) * 100);
+    const barColor = secPct >= 80 ? '#3fb950' : secPct >= 60 ? '#f0a500' : '#f85149';
+    breakdownEl.innerHTML += `
+      <div class="breakdown-row">
+        <span class="sec-title">${sname}</span>
+        <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${secPct}%;background:${barColor}"></div></div>
+        <span class="breakdown-score">${secCorrect}/${count}</span>
+      </div>`;
+    offset2 += count;
+  });
+
+  // Review list (wrong answers only)
+  const reviewEl = document.getElementById('reviewList');
+  reviewEl.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  let wrongs = 0;
+  questions.forEach((q, i) => {
+    const ua = userAnswers[i];
+    const isCorrect = ua === q.answer;
+    if (!isCorrect) {
+      wrongs++;
+      const yourAns = ua !== null ? `Your answer: ${letters[ua]}. ${q.options[ua]}` : 'Not answered';
+      reviewEl.innerHTML += `
+        <div class="review-item">
+          <div class="ri-q">Q${i+1}. ${q.text.replace(/\n/g,' ').slice(0,120)}${q.text.length > 120 ? '…':''}</div>
+          <div class="ri-ans" style="color:#f87171">${yourAns}</div>
+          <div class="ri-ans" style="color:#7ee787">✓ Correct: ${letters[q.answer]}. ${q.options[q.answer]}</div>
+          <div class="ri-expl">${q.explain.replace(/<[^>]+>/g,'')}</div>
+        </div>`;
+    }
+  });
+  if (wrongs === 0) reviewEl.innerHTML = '<p style="color:var(--green);padding:16px 0">🎉 No wrong answers!</p>';
+}
+
+// ═══════════════════════════════════════════════════
+//  RESTART
+// ═══════════════════════════════════════════════════
+function restartQuiz() {
+  currentQ = 0;
+  userAnswers = new Array(questions.length).fill(null);
+  secondsLeft = 45 * 60;
+  document.getElementById('timer').textContent = '45:00';
+  document.getElementById('timer').classList.remove('urgent');
+  document.getElementById('resultsScreen').classList.remove('active');
+  document.getElementById('startScreen').classList.add('active');
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('progressBarWrap').style.display = 'none';
+}
+</script>
+</body>
+</html>
