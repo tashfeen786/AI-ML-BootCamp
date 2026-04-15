@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Concepts Quiz — Overfitting, Bias, Regularization & More</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #131929;
+    --card: #1a2235;
+    --border: #2a3650;
+    --accent: #4f8ef7;
+    --accent2: #f7914f;
+    --green: #4fca8e;
+    --red: #f7614f;
+    --yellow: #f7d24f;
+    --text: #e8edf8;
+    --muted: #7a8aaa;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 40px 20px 80px; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+  .badge span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 1.8s infinite; }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 500px;
+    margin: 0 auto 28px;
+    line-height: 1.6;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .meta-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .meta-chip strong { color: var(--text); margin-right: 4px; }
+
+  /* ── Name Input ── */
+  #name-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 36px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+  #name-section label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+  #student-name {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #student-name:focus { border-color: var(--accent); }
+
+  /* ── Progress Bar ── */
+  #progress-bar-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+  #progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  #score-live {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  /* ── Quiz Form ── */
+  #quiz-form { animation: fadeUp 0.5s ease 0.4s both; }
+
+  .q-block {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    transition: border-color 0.3s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .q-block.answered::before { background: var(--accent); }
+  .q-block.correct { border-color: var(--green); }
+  .q-block.correct::before { background: var(--green); }
+  .q-block.wrong { border-color: var(--red); }
+  .q-block.wrong::before { background: var(--red); }
+
+  .q-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .q-text {
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .q-hint {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    border-left: 3px solid var(--yellow);
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.1s;
+    user-select: none;
+  }
+  .option:hover { border-color: var(--accent); background: rgba(79,142,247,0.06); transform: translateX(3px); }
+  .option input[type=radio] { display: none; }
+
+  .opt-bullet {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+
+  .option.selected .opt-bullet {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .option.selected { border-color: var(--accent); background: rgba(79,142,247,0.1); }
+
+  .opt-text { font-size: 14.5px; line-height: 1.5; padding-top: 4px; }
+
+  /* After submit reveal */
+  .option.correct-ans .opt-bullet { background: var(--green); border-color: var(--green); color: #0b0f1a; }
+  .option.correct-ans { border-color: var(--green); background: rgba(79,202,142,0.07); }
+  .option.wrong-ans .opt-bullet { background: var(--red); border-color: var(--red); color: white; }
+  .option.wrong-ans { border-color: var(--red); background: rgba(247,97,79,0.07); }
+
+  .explanation {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(79,142,247,0.06);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #b0bdd8;
+    display: none;
+  }
+  .explanation strong { color: var(--accent); }
+
+  /* ── Submit Button ── */
+  #submit-btn {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #submit-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+  /* ── Result Panel ── */
+  #result-panel {
+    display: none;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    margin-top: 40px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .result-emoji { font-size: 64px; margin-bottom: 16px; }
+
+  .result-score {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .score-denom { font-size: 1.5rem; color: var(--muted); font-weight: 400; }
+
+  .result-percent {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+
+  .result-msg {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 30px;
+    line-height: 1.6;
+  }
+
+  .grade-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+  .grade-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .grade-item .val { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+  .grade-item .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .val.correct { color: var(--green); }
+  .val.wrong { color: var(--red); }
+  .val.skipped { color: var(--yellow); }
+
+  #retry-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 32px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  #retry-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  /* Animations */
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .q-block { padding: 20px 16px; }
+    .grade-breakdown { grid-template-columns: 1fr; }
+    #result-panel { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="badge"><span></span> Machine Learning Fundamentals</div>
+    <h1>The <em>Bias–Variance</em><br>& Regularization Quiz</h1>
+    <p class="subtitle">Test your intuition on overfitting, underfitting, bias, variance, and regularization techniques including Ridge &amp; Lasso.</p>
+    <div class="meta-row">
+      <div class="meta-chip"><strong>25</strong> Questions</div>
+      <div class="meta-chip"><strong>Topic:</strong> ML Fundamentals</div>
+      <div class="meta-chip"><strong>Level:</strong> Conceptual + Intuitive</div>
+    </div>
+  </header>
+
+  <!-- Name Input -->
+  <div id="name-section">
+    <label for="student-name">✏️ &nbsp;Your Name</label>
+    <input type="text" id="student-name" placeholder="Enter your full name to begin…" autocomplete="off">
+  </div>
+
+  <!-- Progress Bar -->
+  <div id="progress-bar-wrap">
+    <span id="progress-label">PROGRESS</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span id="score-live">0 / 25</span>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz-form"></div>
+
+  <!-- Submit -->
+  <button id="submit-btn" onclick="submitQuiz()">Submit Quiz →</button>
+
+  <!-- Results -->
+  <div id="result-panel">
+    <div class="result-emoji" id="res-emoji">🎉</div>
+    <div class="result-score"><span id="res-score">0</span><span class="score-denom"> / 25</span></div>
+    <div class="result-percent" id="res-percent"></div>
+    <div class="result-msg" id="res-msg"></div>
+    <div class="grade-breakdown">
+      <div class="grade-item"><div class="val correct" id="res-correct">0</div><div class="lbl">Correct</div></div>
+      <div class="grade-item"><div class="val wrong" id="res-wrong">0</div><div class="lbl">Wrong</div></div>
+      <div class="grade-item"><div class="val skipped" id="res-skipped">0</div><div class="lbl">Skipped</div></div>
+    </div>
+    <button id="retry-btn" onclick="retryQuiz()">↩ Retry Quiz</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  // ── OVERFITTING ──
+  {
+    topic: "Overfitting",
+    q: "You train a decision tree on 200 samples and it achieves 99.8% training accuracy but only 61% on the test set. This is a classic case of…",
+    hint: "Think: the model memorized the exam answers instead of learning the subject.",
+    options: ["Underfitting — the model is too simple", "Overfitting — the model is too complex", "A perfectly calibrated model", "High bias and low variance"],
+    answer: 1,
+    explanation: "The huge gap between training accuracy (99.8%) and test accuracy (61%) screams <strong>overfitting</strong>. The model memorized training noise instead of learning the true pattern, so it fails on new data."
+  },
+  {
+    topic: "Underfitting",
+    q: "A linear regression model is applied to data that has a clear non-linear (quadratic) relationship. Training error is 40%, test error is 42%. What's happening?",
+    hint: "Both errors are high and close together. What does that tell you?",
+    options: ["Overfitting — the model needs less complexity", "Underfitting — the model is too simple to capture the pattern", "The model generalizes perfectly", "High variance, low bias"],
+    answer: 1,
+    explanation: "When <strong>both training and test errors are high</strong>, the model is underfitting. Using a linear model on quadratic data means the model is too simple — high bias, low variance."
+  },
+  {
+    topic: "Bias",
+    q: "In ML, 'bias' refers to the error that comes from…",
+    hint: "Imagine you always aim left of the target, even with a perfect aim.",
+    options: ["Using too much data", "Incorrect assumptions in the learning algorithm", "Random noise in the data", "The gap between validation and test error"],
+    answer: 1,
+    explanation: "<strong>Bias</strong> is the error from wrong assumptions (e.g., assuming linearity in non-linear data). A high-bias model systematically misses the true pattern — like always predicting the wrong direction."
+  },
+  {
+    topic: "Variance",
+    q: "A model performs very differently on different subsets of the training data — it's highly sensitive to which samples it sees. This model has…",
+    hint: "Think of a student who gives completely different answers each time they retake the same test.",
+    options: ["High bias", "Low variance", "High variance", "Perfect generalization"],
+    answer: 2,
+    explanation: "<strong>High variance</strong> means the model is overly sensitive to the training data. Even small changes in training samples cause large swings in model output. This is closely related to overfitting."
+  },
+  {
+    topic: "Bias-Variance Tradeoff",
+    q: "Which combination is MOST desirable in a well-generalizing machine learning model?",
+    options: ["High bias, high variance", "Low bias, low variance", "Low bias, high variance", "High bias, low variance"],
+    answer: 1,
+    explanation: "<strong>Low bias + low variance</strong> is the holy grail. Low bias means accurate on average; low variance means consistent across different data. This combination gives the best generalization."
+  },
+  {
+    topic: "Bias-Variance Tradeoff",
+    q: "As you increase model complexity (e.g., adding polynomial degree), what typically happens to bias and variance?",
+    hint: "More complex = the model can fit more patterns, but also more noise.",
+    options: ["Both bias and variance increase", "Bias increases, variance decreases", "Bias decreases, variance increases", "Both bias and variance decrease"],
+    answer: 2,
+    explanation: "Increasing model complexity <strong>decreases bias</strong> (the model can fit the true pattern better) but <strong>increases variance</strong> (the model also fits noise). This is the classic bias-variance tradeoff."
+  },
+  {
+    topic: "Bias-Variance Tradeoff",
+    q: "A dart player always throws darts that are tightly clustered together but far from the bullseye. This represents which scenario?",
+    hint: "Tight clustering = consistent = low variance. But far from bullseye = ?",
+    options: ["Low bias, low variance", "High bias, high variance", "High bias, low variance", "Low bias, high variance"],
+    answer: 2,
+    explanation: "Clustered but far from the bullseye = <strong>high bias, low variance</strong>. The model is consistently wrong in the same direction — systematic error, but not random. Think of a thermostat that always reads 5°C too high."
+  },
+  {
+    topic: "Overfitting",
+    q: "Which of the following is NOT a valid strategy to reduce overfitting?",
+    options: ["Adding more training data", "Increasing model complexity", "Applying regularization", "Using cross-validation"],
+    answer: 1,
+    explanation: "<strong>Increasing model complexity</strong> makes overfitting worse, not better. The other options (more data, regularization, cross-validation) all help the model generalize better."
+  },
+  {
+    topic: "Overfitting",
+    q: "Your neural network has 10 million parameters but only 5,000 training samples. What risk do you face?",
+    hint: "Parameters >> samples means the model can 'explain' every single training point exactly.",
+    options: ["Underfitting due to too many parameters", "Overfitting — the model memorizes the tiny dataset", "Perfect fit — more parameters always help", "No issue if the test set is large"],
+    answer: 1,
+    explanation: "When parameters greatly exceed training samples, the model can <strong>memorize</strong> the training data perfectly (overfitting). It learns the noise instead of the signal."
+  },
+  // ── REGULARIZATION ──
+  {
+    topic: "Regularization",
+    q: "Regularization works by adding a penalty term to the loss function. What is the primary goal of this penalty?",
+    hint: "Regularization 'taxes' complex models.",
+    options: ["Increase training accuracy", "Discourage overly complex models by penalizing large coefficients", "Speed up model training", "Eliminate all features"],
+    answer: 1,
+    explanation: "Regularization adds a <strong>penalty for model complexity</strong> (large weights). This forces the model to be simpler and rely only on truly important patterns, reducing overfitting."
+  },
+  {
+    topic: "Regularization",
+    q: "What happens when the regularization hyperparameter λ (lambda) is set to a very large value?",
+    hint: "An extremely high 'tax' on complexity means...",
+    options: ["The model overfits more", "The model becomes very complex", "The model underfits — coefficients are shrunk too much toward zero", "No effect on the model"],
+    answer: 2,
+    explanation: "A very large λ <strong>over-penalizes</strong> the model, shrinking all coefficients close to zero. The model becomes too simple (underfitting). Setting λ = 0 removes regularization entirely."
+  },
+  // ── RIDGE (L2) ──
+  {
+    topic: "Ridge Regression",
+    q: "Ridge Regression adds which penalty term to the loss function?",
+    options: ["Sum of absolute values of coefficients (L1)", "Sum of squared values of coefficients (L2)", "Maximum coefficient value", "Number of non-zero coefficients"],
+    answer: 1,
+    explanation: "<strong>Ridge uses L2 regularization</strong>: it adds the sum of <em>squared</em> coefficients (β²) as a penalty. This shrinks all coefficients toward zero but rarely makes them exactly zero."
+  },
+  {
+    topic: "Ridge Regression",
+    q: "You have 50 correlated features. You want to keep all features but reduce their impact. Which method is more appropriate?",
+    hint: "One method shrinks, one method eliminates.",
+    options: ["Lasso — it eliminates irrelevant features", "Ridge — it shrinks all coefficients smoothly without zeroing them", "Neither — regularization doesn't handle correlated features", "Both give identical results"],
+    answer: 1,
+    explanation: "<strong>Ridge regression</strong> handles multicollinearity well. It distributes coefficient weight among correlated features and shrinks them proportionally — making it preferred when you believe all features contribute."
+  },
+  {
+    topic: "Ridge Regression",
+    q: "What does Ridge Regression NOT do, unlike Lasso?",
+    hint: "One of these methods can make weights exactly zero.",
+    options: ["Reduce overfitting", "Shrink coefficients toward zero", "Set coefficients to exactly zero (feature selection)", "Work better with correlated features"],
+    answer: 2,
+    explanation: "Ridge shrinks coefficients toward zero but <strong>never makes them exactly zero</strong>. It doesn't perform automatic feature selection. Lasso, with its L1 penalty, can produce exact zeros."
+  },
+  // ── LASSO ──
+  {
+    topic: "Lasso Regression",
+    q: "Lasso Regression is particularly useful when you suspect that…",
+    hint: "Sparse means most things are unnecessary.",
+    options: ["All features are equally important", "Only a small number of features truly matter (sparse solution)", "Features are all highly correlated", "The data has no noise"],
+    answer: 1,
+    explanation: "<strong>Lasso excels in sparse settings</strong> — when only a few features are actually relevant. Its L1 penalty drives irrelevant feature coefficients to exactly zero, acting as automatic feature selection."
+  },
+  {
+    topic: "Lasso Regression",
+    q: "You have 1000 features but suspect only 20 are truly predictive. You want automatic feature selection. Which regularization do you choose?",
+    options: ["Ridge — it handles high-dimensional data better", "Lasso — it zeros out irrelevant features automatically", "No regularization needed", "Always use both together"],
+    answer: 1,
+    explanation: "<strong>Lasso</strong> is the right choice here. By zeroing out irrelevant coefficients, it effectively selects the ~20 important features from 1000, making the model interpretable and efficient."
+  },
+  {
+    topic: "Lasso vs Ridge",
+    q: "What is the key geometric difference between Lasso (L1) and Ridge (L2) that explains why Lasso produces sparse solutions?",
+    hint: "Think about the shape of the constraint region in parameter space.",
+    options: ["Lasso uses a circular constraint; Ridge uses a diamond", "Lasso uses a diamond-shaped constraint (corners on axes); Ridge uses a sphere", "Both use the same constraint shape", "The loss function shape doesn't matter"],
+    answer: 1,
+    explanation: "Lasso's <strong>diamond-shaped (L1 ball)</strong> constraint has corners on the axes. Optimal solutions tend to hit these corners, producing zero coefficients. Ridge's smooth circular constraint rarely touches the axes."
+  },
+  // ── ELASTIC NET / COMBINED ──
+  {
+    topic: "Lasso vs Ridge",
+    q: "A researcher says: 'My Lasso model zeroed out 990 of my 1000 features.' What does this tell you?",
+    options: ["The model underfits because it discarded too much data", "Lasso performed automatic feature selection, keeping only 10 relevant features", "The model overfits badly", "Ridge would have done the same"],
+    answer: 1,
+    explanation: "This is <strong>Lasso's sparse solution property</strong> in action. By zeroing out 990 coefficients, Lasso identified the 10 most predictive features. This is a feature, not a bug!"
+  },
+  {
+    topic: "Regularization Concepts",
+    q: "Elastic Net combines L1 and L2 regularization. When would you prefer Elastic Net over pure Lasso?",
+    hint: "What's Lasso's weakness with correlated features?",
+    options: ["When you want all features zeroed out", "When features are highly correlated and you want feature selection with stability", "When training data is very large", "When the model already underfits"],
+    answer: 1,
+    explanation: "<strong>Elastic Net</strong> is ideal when features are correlated. Lasso tends to arbitrarily pick one feature from a correlated group. Elastic Net's L2 component adds stability while L1 still enables sparsity."
+  },
+  // ── SCENARIO-BASED ──
+  {
+    topic: "Scenario",
+    q: "Your model has Training MSE = 2.1 and Test MSE = 2.3. What is the most likely conclusion?",
+    hint: "The errors are very close to each other.",
+    options: ["Severe overfitting", "The model generalizes well — errors are close", "Severe underfitting", "The model has high variance"],
+    answer: 1,
+    explanation: "When <strong>training and test errors are close and low</strong>, the model generalizes well. The small gap (2.1 vs 2.3) suggests the model learned the true pattern without memorizing noise."
+  },
+  {
+    topic: "Scenario",
+    q: "A student memorizes every practice problem word-for-word but scores poorly on the actual exam because questions are worded differently. This mirrors which ML concept?",
+    options: ["Underfitting — the student didn't learn enough", "Overfitting — memorized training examples instead of principles", "Perfect generalization", "High bias"],
+    answer: 1,
+    explanation: "Memorizing without understanding = <strong>overfitting</strong>. The student's 'model' performed perfectly on training data (practice problems) but failed to generalize to new data (the real exam)."
+  },
+  {
+    topic: "Scenario",
+    q: "A weather model always predicts 'sunny' regardless of input. It has about 70% accuracy (because it's sunny 70% of the time). This is an example of…",
+    hint: "One prediction for all inputs = overly simple = ?",
+    options: ["Overfitting — the model is too complex", "Underfitting — high bias, ignores all features", "Perfect Bayesian estimation", "Low bias, low variance"],
+    answer: 1,
+    explanation: "Always predicting the same thing = <strong>severe underfitting with extremely high bias</strong>. The model ignores all features. Zero variance (always same output), but terrible accuracy on minority-class days."
+  },
+  {
+    topic: "Cross-Validation",
+    q: "Cross-validation is primarily used to…",
+    hint: "We want a reliable estimate of how well the model will do on data it has never seen.",
+    options: ["Speed up training time", "Get a reliable estimate of model generalization performance", "Increase the training dataset size", "Apply regularization automatically"],
+    answer: 1,
+    explanation: "<strong>Cross-validation</strong> splits data into multiple folds, training on some and validating on others. This gives a robust, unbiased estimate of how the model will perform on unseen data."
+  },
+  {
+    topic: "Regularization",
+    q: "Adding dropout to a neural network is most analogous to which classical regularization concept?",
+    hint: "Dropout randomly removes neurons — what effect does this have on complexity?",
+    options: ["Increasing model capacity", "Ridge regression — it shrinks weights", "Regularization — it prevents the network from over-relying on specific neurons", "Feature engineering"],
+    answer: 2,
+    explanation: "<strong>Dropout</strong> prevents co-adaptation of neurons, forcing the network to learn redundant representations. This acts as a form of regularization, similar in spirit to how Ridge and Lasso prevent overreliance on specific features."
+  },
+  {
+    topic: "Bias-Variance",
+    q: "You compare two models on 10 different train/test splits. Model A gives test errors: [12, 11, 13, 12, 11] and Model B: [8, 19, 5, 21, 7]. Which statement is TRUE?",
+    hint: "Look at how consistent each model's errors are.",
+    options: ["Model A has higher variance than Model B", "Model B is more consistent and reliable", "Model A has lower variance and is more stable", "Both models have the same bias"],
+    answer: 2,
+    explanation: "Model A's errors are consistent (~12) = <strong>low variance</strong>. Model B swings wildly (5 to 21) = <strong>high variance</strong>. Model A is far more reliable and stable despite possibly higher average error."
+  }
+];
+
+// Render Quiz
+function renderQuiz() {
+  const form = document.getElementById('quiz-form');
+  form.innerHTML = '';
+  questions.forEach((q, i) => {
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.id = `q-block-${i}`;
+    const letters = ['A','B','C','D'];
+    block.innerHTML = `
+      <div class="q-number">Q${i+1} &nbsp;·&nbsp; ${q.topic}</div>
+      <div class="q-text">${q.q}</div>
+      ${q.hint ? `<div class="q-hint">💡 Hint: ${q.hint}</div>` : ''}
+      <div class="options" id="opts-${i}">
+        ${q.options.map((opt, j) => `
+          <label class="option" id="opt-${i}-${j}" onclick="selectOption(${i}, ${j})">
+            <input type="radio" name="q${i}" value="${j}">
+            <div class="opt-bullet">${letters[j]}</div>
+            <div class="opt-text">${opt}</div>
+          </label>
+        `).join('')}
+      </div>
+      <div class="explanation" id="exp-${i}">${q.explanation}</div>
+    `;
+    form.appendChild(block);
+  });
+}
+
+let answered = new Array(questions.length).fill(null);
+
+function selectOption(qi, oi) {
+  // Deselect all options in this question
+  for (let j = 0; j < questions[qi].options.length; j++) {
+    const el = document.getElementById(`opt-${qi}-${j}`);
+    if (el) el.classList.remove('selected');
+  }
+  // Select chosen
+  const chosen = document.getElementById(`opt-${qi}-${oi}`);
+  if (chosen) chosen.classList.add('selected');
+  answered[qi] = oi;
+
+  // Update progress
+  const count = answered.filter(a => a !== null).length;
+  document.getElementById('progress-fill').style.width = (count / questions.length * 100) + '%';
+  document.getElementById('score-live').textContent = count + ' / ' + questions.length;
+
+  // Mark block as answered
+  document.getElementById(`q-block-${qi}`).classList.add('answered');
+}
+
+function submitQuiz() {
+  const name = document.getElementById('student-name').value.trim();
+
+  // Calculate score
+  let correct = 0, wrong = 0, skipped = 0;
+  questions.forEach((q, i) => {
+    const block = document.getElementById(`q-block-${i}`);
+    const exp = document.getElementById(`exp-${i}`);
+    block.classList.remove('answered');
+
+    if (answered[i] === null) {
+      skipped++;
+      // Show correct answer
+      const corrEl = document.getElementById(`opt-${i}-${q.answer}`);
+      if (corrEl) corrEl.classList.add('correct-ans');
+      block.classList.add('wrong');
+    } else if (answered[i] === q.answer) {
+      correct++;
+      const el = document.getElementById(`opt-${i}-${answered[i]}`);
+      if (el) el.classList.add('correct-ans');
+      block.classList.add('correct');
+    } else {
+      wrong++;
+      const selEl = document.getElementById(`opt-${i}-${answered[i]}`);
+      if (selEl) selEl.classList.add('wrong-ans');
+      const corrEl = document.getElementById(`opt-${i}-${q.answer}`);
+      if (corrEl) corrEl.classList.add('correct-ans');
+      block.classList.add('wrong');
+    }
+
+    // Disable all options
+    for (let j = 0; j < q.options.length; j++) {
+      const opt = document.getElementById(`opt-${i}-${j}`);
+      if (opt) opt.style.cursor = 'default';
+      if (opt) opt.onclick = null;
+    }
+
+    // Show explanation
+    exp.style.display = 'block';
+  });
+
+  // Show result panel
+  const pct = Math.round(correct / questions.length * 100);
+  document.getElementById('res-score').textContent = correct;
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-skipped').textContent = skipped;
+
+  const pctEl = document.getElementById('res-percent');
+  pctEl.textContent = pct + '% Score';
+  if (pct >= 80) {
+    pctEl.style.background = 'rgba(79,202,142,0.15)';
+    pctEl.style.color = 'var(--green)';
+    pctEl.style.border = '1px solid rgba(79,202,142,0.3)';
+  } else if (pct >= 50) {
+    pctEl.style.background = 'rgba(247,210,79,0.15)';
+    pctEl.style.color = 'var(--yellow)';
+    pctEl.style.border = '1px solid rgba(247,210,79,0.3)';
+  } else {
+    pctEl.style.background = 'rgba(247,97,79,0.15)';
+    pctEl.style.color = 'var(--red)';
+    pctEl.style.border = '1px solid rgba(247,97,79,0.3)';
+  }
+
+  let emoji, msg;
+  if (pct === 100) { emoji = '🏆'; msg = `Perfect score, ${name || 'student'}! You have masterful understanding of bias-variance tradeoffs and regularization.`; }
+  else if (pct >= 80) { emoji = '🎉'; msg = `Excellent work, ${name || 'student'}! You have a strong grasp of ML fundamentals. Review the explanations for any you missed.`; }
+  else if (pct >= 60) { emoji = '📚'; msg = `Good effort, ${name || 'student'}! You understand the basics but there are some gaps to address — revisit the explanations above.`; }
+  else if (pct >= 40) { emoji = '💡'; msg = `Keep studying, ${name || 'student'}! Review bias vs variance, when to use Ridge vs Lasso, and the effect of λ. You'll get there!`; }
+  else { emoji = '🔄'; msg = `Don't worry, ${name || 'student'} — these concepts take time. Read each explanation carefully and retake the quiz. Persistence is key!`; }
+
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-msg').textContent = msg;
+
+  document.getElementById('result-panel').style.display = 'block';
+  document.getElementById('submit-btn').style.display = 'none';
+  document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function retryQuiz() {
+  answered = new Array(questions.length).fill(null);
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('score-live').textContent = '0 / ' + questions.length;
+  document.getElementById('result-panel').style.display = 'none';
+  document.getElementById('submit-btn').style.display = 'block';
+  renderQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init
+renderQuiz();
+</script>
+</body>
+</html>
