@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD Pipeline Digital Twin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2128;
+    --surface3: #21262D;
+    --border: #30363D;
+    --border2: #3D444D;
+    --text: #E6EDF3;
+    --text2: #8B949E;
+    --text3: #656D76;
+    --blue: #388BFD;
+    --green: #3FB950;
+    --red: #F85149;
+    --yellow: #D29922;
+    --purple: #BC8CFF;
+    --teal: #39C5CF;
+    --orange: #F0883E;
+    --accent: #1F6FEB;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .topbar-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    white-space: nowrap;
+  }
+  .topbar-logo .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .pipeline-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+  }
+  .pipeline-status .dot-status {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text3);
+    transition: background 0.3s;
+  }
+  .pipeline-status.running .dot-status { background: var(--yellow); animation: blink 0.8s infinite; }
+  .pipeline-status.passed .dot-status  { background: var(--green); }
+  .pipeline-status.failed .dot-status  { background: var(--red); }
+
+  .speed-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-left: auto;
+    font-size: 12px; color: var(--text2);
+  }
+  .speed-row select {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px;
+    padding: 4px 8px; font-size: 12px; cursor: pointer;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-head {
+    padding: 14px 16px 10px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .scenario-list {
+    flex: 1; overflow-y: auto;
+    padding: 8px;
+  }
+  .scenario-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface2);
+    position: relative;
+  }
+  .scenario-card:hover { border-color: var(--border2); background: var(--surface3); }
+  .scenario-card.active {
+    border-color: var(--accent);
+    background: rgba(31, 111, 235, 0.08);
+  }
+  .sc-icon { font-size: 18px; margin-bottom: 4px; }
+  .sc-title { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 3px; }
+  .sc-sub { font-size: 11px; color: var(--text2); line-height: 1.4; margin-bottom: 6px; }
+  .sc-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .sc-tag {
+    font-size: 10px; padding: 1px 6px;
+    border-radius: 4px; font-weight: 500;
+    background: var(--surface3); color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .sc-diff {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500;
+  }
+  .diff-beginner { background: rgba(63,185,80,.15); color: var(--green); }
+  .diff-intermediate { background: rgba(208,153,34,.15); color: var(--yellow); }
+  .diff-advanced { background: rgba(248,81,73,.15); color: var(--red); }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── PIPELINE TRACK ── */
+  .pipeline-section {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .pipeline-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .stage-wrap {
+    display: flex; align-items: center; flex: 1; min-width: 0;
+  }
+  .stage-box {
+    flex: 1; min-width: 90px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+  }
+  .stage-box::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: transparent;
+    transition: background 0.3s;
+  }
+  .stage-box:hover { border-color: var(--border2); }
+  .stage-box.active::before { background: var(--blue); }
+  .stage-box.running::before { background: var(--yellow); animation: pulse-bar 1s infinite; }
+  .stage-box.passed::before { background: var(--green); }
+  .stage-box.failed::before { background: var(--red); }
+  @keyframes pulse-bar { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .stage-box.running { border-color: var(--yellow); }
+  .stage-box.passed { border-color: rgba(63,185,80,.4); background: rgba(63,185,80,.05); }
+  .stage-box.failed { border-color: rgba(248,81,73,.4); background: rgba(248,81,73,.05); }
+
+  .stage-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .stage-name { font-size: 11px; font-weight: 500; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage-state { font-size: 10px; margin-top: 3px; height: 14px; }
+  .state-idle { color: var(--text3); }
+  .state-running { color: var(--yellow); }
+  .state-passed { color: var(--green); }
+  .state-failed { color: var(--red); }
+
+  .stage-arrow {
+    color: var(--text3); font-size: 14px; padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── LEARN BOX ── */
+  .learn-section {
+    padding: 12px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .learn-inner {
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .learn-badge {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    background: rgba(56,139,253,.15); color: var(--blue);
+    border: 1px solid rgba(56,139,253,.3);
+    white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+  }
+  .learn-badge.fail { background: rgba(248,81,73,.15); color: var(--red); border-color: rgba(248,81,73,.3); }
+  .learn-text { font-size: 13px; color: var(--text2); line-height: 1.55; }
+  .learn-text b { color: var(--text); font-weight: 500; }
+  .learn-text code {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--surface3); padding: 1px 5px;
+    border-radius: 4px; color: var(--teal);
+  }
+
+  /* ── BOTTOM PANELS ── */
+  .bottom-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  /* ── CODE EDITOR ── */
+  .code-panel {
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .panel-header {
+    display: flex; align-items: center; gap: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0;
+  }
+  .file-tab {
+    padding: 8px 14px;
+    font-size: 11.5px; font-family: var(--mono);
+    color: var(--text3);
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .file-tab:hover { color: var(--text2); background: var(--surface2); }
+  .file-tab.active {
+    color: var(--text);
+    background: var(--surface2);
+    border-bottom-color: var(--blue);
+  }
+  .file-tab.highlight { color: var(--orange); }
+
+  .code-area {
+    flex: 1; overflow: auto; padding: 14px 0;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+    background: var(--surface2);
+    counter-reset: line;
+  }
+  .code-line {
+    display: flex; min-height: 21px;
+    padding: 0 14px 0 0;
+    transition: background 0.2s;
+  }
+  .code-line.hl-line { background: rgba(240,136,62,.12); }
+  .line-num {
+    width: 40px; text-align: right; padding-right: 14px;
+    color: var(--text3); user-select: none; flex-shrink: 0;
+    font-size: 11px; line-height: 1.7;
+  }
+  .line-content { flex: 1; white-space: pre; }
+
+  /* Syntax colors */
+  .kw  { color: #FF7B72; }
+  .fn  { color: #D2A8FF; }
+  .str { color: #A5D6FF; }
+  .cmt { color: #8B949E; font-style: italic; }
+  .num { color: #79C0FF; }
+  .dec { color: #FFA657; }
+  .op  { color: #FF7B72; }
+
+  /* ── TERMINAL ── */
+  .terminal-panel {
+    display: flex; flex-direction: column; overflow: hidden;
+    background: #0D1117;
+  }
+  .terminal-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-title {
+    font-size: 12px; font-family: var(--mono); color: var(--text2);
+    margin-left: 4px;
+  }
+  .term-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    font-family: var(--mono); font-size: 12px; line-height: 1.65;
+  }
+  .tl { display: block; }
+  .tl-cmd  { color: #79C0FF; }
+  .tl-ok   { color: #3FB950; }
+  .tl-err  { color: #F85149; }
+  .tl-warn { color: #D29922; }
+  .tl-info { color: #A5D6FF; }
+  .tl-dim  { color: #8B949E; }
+  .tl-prompt { color: #BC8CFF; }
+  .cursor {
+    display: inline-block; width: 8px; height: 14px;
+    background: var(--text2); animation: blink 1s step-end infinite;
+    vertical-align: text-bottom; margin-left: 2px;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 16px;
+    border-radius: var(--radius); border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text);
+    font-size: 13px; font-family: var(--sans); font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface3); border-color: var(--text3); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-run { background: var(--accent); border-color: transparent; color: #fff; }
+  .btn-run:hover { background: #1a6ee0; }
+  .btn-danger { border-color: rgba(248,81,73,.4); color: var(--red); }
+  .btn-danger:hover { background: rgba(248,81,73,.1); }
+  .btn-icon { font-size: 14px; }
+
+  .metrics-row {
+    display: flex; gap: 16px; margin-left: auto;
+  }
+  .metric { text-align: right; }
+  .metric-val { font-size: 16px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+  .metric-lbl { font-size: 10px; color: var(--text3); }
+
+  /* ── FAIL OVERLAY ── */
+  .fail-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(13,17,23,.85);
+    z-index: 10;
+    align-items: center; justify-content: center;
+  }
+  .fail-overlay.show { display: flex; }
+  .fail-card {
+    background: var(--surface);
+    border: 1px solid rgba(248,81,73,.5);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    max-width: 480px;
+    width: 90%;
+  }
+  .fail-card h2 { font-size: 16px; color: var(--red); margin-bottom: 8px; }
+  .fail-card .fail-msg { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+  .fail-card .fail-fix {
+    font-size: 12px; color: var(--text2); line-height: 1.6;
+    padding: 12px; background: var(--surface2);
+    border-radius: var(--radius); border-left: 3px solid var(--yellow);
+    margin-bottom: 16px;
+  }
+  .fail-card .fail-fix b { color: var(--yellow); }
+
+  /* ── SUCCESS BANNER ── */
+  .success-banner {
+    display: none;
+    padding: 10px 20px;
+    background: rgba(63,185,80,.1);
+    border-top: 1px solid rgba(63,185,80,.3);
+    text-align: center;
+    font-size: 13px; color: var(--green); font-weight: 500;
+    flex-shrink: 0;
+  }
+  .success-banner.show { display: block; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── OVERLAY WRAPPER ── */
+  .right-wrapper {
+    position: relative; display: flex; flex-direction: column; overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="dot"></div>
+    CI/CD Pipeline Digital Twin
+  </div>
+  <div class="pipeline-status" id="pipeline-status">
+    <div class="dot-status"></div>
+    <span id="status-text">idle — select a scenario</span>
+  </div>
+  <div class="speed-row">
+    <label for="speed-sel" style="font-size:12px;color:var(--text2)">Speed:</label>
+    <select id="speed-sel">
+      <option value="0.5">Slow (0.5×)</option>
+      <option value="1" selected>Normal (1×)</option>
+      <option value="2">Fast (2×)</option>
+      <option value="4">Very fast (4×)</option>
+    </select>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">Scenarios</div>
+    <div class="scenario-list" id="scenario-list">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-wrapper">
+    <div class="right-panel">
+
+      <!-- PIPELINE TRACK -->
+      <div class="pipeline-section">
+        <div class="pipeline-track" id="pipeline-track">
+          <div style="color:var(--text3);font-size:13px;padding:10px 0">Select a scenario to begin</div>
+        </div>
+      </div>
+
+      <!-- LEARN BOX -->
+      <div class="learn-section">
+        <div class="learn-inner">
+          <div class="learn-badge" id="learn-badge">Welcome</div>
+          <div class="learn-text" id="learn-text">
+            Choose a scenario from the left panel, then press <b>Run</b> to simulate the full pipeline. Use <b>Step</b> to advance one stage at a time.
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM PANELS -->
+      <div class="bottom-panels">
+
+        <!-- CODE EDITOR -->
+        <div class="code-panel">
+          <div class="panel-header" id="file-tabs">
+            <!-- tabs filled by JS -->
+          </div>
+          <div class="code-area" id="code-area">
+            <div style="padding:20px;color:var(--text3);font-size:13px">
+              Select a scenario to view its files.
+            </div>
+          </div>
+        </div>
+
+        <!-- TERMINAL -->
+        <div class="terminal-panel">
+          <div class="terminal-header">
+            <div class="term-dot" style="background:#FF5F57"></div>
+            <div class="term-dot" style="background:#FFBD2E"></div>
+            <div class="term-dot" style="background:#28CA41"></div>
+            <span class="term-title">GitHub Actions — Runner Output</span>
+          </div>
+          <div class="term-body" id="terminal">
+            <span class="tl tl-dim">Waiting for pipeline to start...</span>
+          </div>
+        </div>
+
+      </div><!-- end bottom-panels -->
+
+    </div><!-- end right-panel -->
+
+    <!-- SUCCESS BANNER -->
+    <div class="success-banner" id="success-banner">
+      ✓ Pipeline completed successfully — all stages passed — application deployed to production!
+    </div>
+
+    <!-- CONTROLS BAR -->
+    <div class="controls-bar">
+      <button class="btn btn-run" id="btn-run" onclick="runPipeline()" disabled>
+        <span class="btn-icon">▶</span> Run Pipeline
+      </button>
+      <button class="btn" id="btn-step" onclick="stepForward()" disabled>
+        <span class="btn-icon">⏭</span> Step
+      </button>
+      <button class="btn" id="btn-pause" onclick="pausePipeline()" disabled>
+        <span class="btn-icon">⏸</span> Pause
+      </button>
+      <button class="btn btn-danger" id="btn-stop" onclick="stopPipeline()" disabled>
+        <span class="btn-icon">⏹</span> Stop
+      </button>
+      <button class="btn" onclick="resetUI()">
+        <span class="btn-icon">↺</span> Reset
+      </button>
+      <div class="metrics-row">
+        <div class="metric">
+          <div class="metric-val" id="m-stage">0/0</div>
+          <div class="metric-lbl">Stage</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-time">0s</div>
+          <div class="metric-lbl">Elapsed</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-tests">—</div>
+          <div class="metric-lbl">Tests</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAIL OVERLAY -->
+    <div class="fail-overlay" id="fail-overlay">
+      <div class="fail-card">
+        <h2 id="fail-title">Pipeline Failed</h2>
+        <p class="fail-msg" id="fail-msg"></p>
+        <div class="fail-fix" id="fail-fix"></div>
+        <button class="btn" onclick="document.getElementById('fail-overlay').classList.remove('show')" style="width:100%;justify-content:center">Dismiss</button>
+      </div>
+    </div>
+
+  </div><!-- end right-wrapper -->
+</div><!-- end main -->
+
+<script>
+// ── SSE connection ───────────────────────────────────────────
+let evtSource = null;
+
+function connectSSE() {
+  if (evtSource) evtSource.close();
+  evtSource = new EventSource('/api/events');
+
+  evtSource.addEventListener('pipeline_start', e => {
+    const data = JSON.parse(e.data);
+    pipelineRunning = true;
+    currentStageIdx = -1;
+    testResults = { passed: 0, failed: 0 };
+    elapsedSec = 0;
+    startTimer();
+    setStatus('running', 'running');
+    document.getElementById('success-banner').classList.remove('show');
+    document.getElementById('fail-overlay').classList.remove('show');
+    updateMetrics();
+    setButtons(true);
+    clearTerminal();
+  });
+
+  evtSource.addEventListener('stage_start', e => {
+    const data = JSON.parse(e.data);
+    currentStageIdx = data.index;
+    setStageState(data.index, 'running');
+    setLearn(data.name, data.learn, false);
+    document.getElementById('m-stage').textContent =
+      `${data.index + 1}/${activeScenario.stages.length}`;
+    if (data.file) showFile(data.file, data.file_highlight);
+    clearTerminal();
+  });
+
+  evtSource.addEventListener('terminal_line', e => {
+    const data = JSON.parse(e.data);
+    appendTermLine(data.line);
+  });
+
+  evtSource.addEventListener('stage_end', e => {
+    const data = JSON.parse(e.data);
+    setStageState(data.index, data.outcome === 'pass' ? 'passed' : 'failed');
+    if (data.outcome === 'fail') {
+      pipelineRunning = false;
+      stopTimer();
+      setStatus('failed', 'failed');
+      setButtons(false);
+      document.getElementById('fail-title').textContent =
+        `Stage ${data.index + 1} Failed`;
+      document.getElementById('fail-msg').textContent = data.fail_message;
+      document.getElementById('fail-fix').innerHTML =
+        '<b>How to fix:</b> ' + data.fail_learn;
+      setTimeout(() => {
+        document.getElementById('fail-overlay').classList.add('show');
+      }, 800);
+      setLearn(activeScenario.stages[data.index].name, data.fail_learn, true);
+    }
+    const stage = activeScenario.stages[data.index];
+    if (stage && stage.id === 'test') {
+      const terms = stage.terminal_lines || [];
+      let p = 0, f = 0;
+      terms.forEach(l => {
+        if (l.type === 'ok'  && l.text.startsWith('PASSED')) p++;
+        if (l.type === 'err' && l.text.startsWith('FAILED')) f++;
+      });
+      testResults = { passed: p, failed: f };
+      if (p || f) document.getElementById('m-tests').textContent = `${p}ok ${f}fail`;
+    }
+  });
+
+  evtSource.addEventListener('pipeline_end', e => {
+    const data = JSON.parse(e.data);
+    pipelineRunning = false;
+    stopTimer();
+    setButtons(false);
+    if (data.outcome === 'success') {
+      setStatus('passed', `passed in ${data.elapsed}s`);
+      document.getElementById('success-banner').classList.add('show');
+      setLearn('Deployed!',
+        'All stages passed. The Docker image is live. Users can access the new version. Total time: ' + data.elapsed + 's.', false);
+    }
+    document.getElementById('m-time').textContent = data.elapsed + 's';
+  });
+
+  evtSource.addEventListener('paused', e => {
+    const data = JSON.parse(e.data);
+    const btn = document.getElementById('btn-pause');
+    btn.innerHTML = data.paused
+      ? '<span class="btn-icon">▶</span> Resume'
+      : '<span class="btn-icon">⏸</span> Pause';
+    if (data.paused) setStatus('running', 'paused');
+    else setStatus('running', 'running');
+  });
+
+  evtSource.addEventListener('stopped', e => {
+    pipelineRunning = false;
+    stopTimer();
+    setStatus('idle', 'stopped');
+    setButtons(false);
+  });
+
+  evtSource.onerror = () => {
+    setTimeout(connectSSE, 2000);
+  };
+}
+
+connectSSE();
+
+// ── State ────────────────────────────────────────────────────
+let scenarios = [];
+let activeScenario = null;
+let currentStageIdx = -1;
+let pipelineRunning = false;
+let stepMode = false;
+let elapsedSec = 0;
+let timerInterval = null;
+let testResults = { passed: 0, failed: 0 };
+
+// ── Load scenarios ───────────────────────────────────────────
+function loadScenarios() {
+  fetch('/api/scenarios')
+    .then(r => r.json())
+    .then(data => { scenarios = data; renderSidebar(); });
+}
+
+function renderSidebar() {
+  const list = document.getElementById('scenario-list');
+  list.innerHTML = scenarios.map((s, i) => `
+    <div class="scenario-card" id="sc-${s.id}" onclick="selectScenario('${s.id}')">
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-title">${s.title.replace('Scenario ' + (i+1) + ' \u2014 ', '')}</div>
+      <div class="sc-sub">${s.subtitle}</div>
+      <div class="sc-tags">${s.tags.slice(0,3).map(t => `<span class="sc-tag">${t}</span>`).join('')}</div>
+      <span class="sc-diff diff-${s.difficulty.toLowerCase()}">${s.difficulty}</span>
+    </div>
+  `).join('');
+}
+
+function selectScenario(id) {
+  if (pipelineRunning) return;
+  activeScenario = scenarios.find(s => s.id === id);
+  if (!activeScenario) return;
+  document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('sc-' + id).classList.add('active');
+  renderPipelineTrack(activeScenario.stages);
+  renderFileTabs(activeScenario.files);
+  const firstFile = Object.keys(activeScenario.files)[0];
+  showFile(firstFile, -1);
+  clearTerminal();
+  appendTermLine({ text: 'Scenario: ' + activeScenario.title, type: 'info' });
+  appendTermLine({ text: 'Press Run Pipeline or Step to begin.', type: 'dim' });
+  setLearn(activeScenario.title, activeScenario.description, false);
+  setStatus('idle', 'ready');
+  resetStages();
+  document.getElementById('success-banner').classList.remove('show');
+  document.getElementById('fail-overlay').classList.remove('show');
+  currentStageIdx = -1;
+  elapsedSec = 0;
+  testResults = { passed: 0, failed: 0 };
+  updateMetrics();
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-step').disabled = false;
+  document.getElementById('m-stage').textContent = '0/' + activeScenario.stages.length;
+}
+
+// ── Pipeline Track ───────────────────────────────────────────
+function renderPipelineTrack(stages) {
+  const track = document.getElementById('pipeline-track');
+  track.innerHTML = stages.map((st, i) => `
+    <div class="stage-wrap">
+      <div class="stage-box idle" id="sbox-${i}" onclick="jumpToStage(${i})" title="${st.name}">
+        <span class="stage-icon">${st.icon}</span>
+        <div class="stage-name">${st.name.split(' \u2014 ')[0]}</div>
+        <div class="stage-state state-idle" id="sstate-${i}">idle</div>
+      </div>
+      ${i < stages.length - 1 ? '<div class="stage-arrow">\u203a</div>' : ''}
+    </div>
+  `).join('');
+}
+
+function setStageState(i, state) {
+  const box = document.getElementById('sbox-' + i);
+  const st  = document.getElementById('sstate-' + i);
+  if (!box) return;
+  box.className = 'stage-box ' + state;
+  const labels = { idle:'idle', active:'ready', running:'running\u2026', passed:'passed \u2713', failed:'failed \u2717' };
+  const cls    = { idle:'state-idle', active:'state-idle', running:'state-running', passed:'state-passed', failed:'state-failed' };
+  st.textContent = labels[state] || state;
+  st.className = 'stage-state ' + (cls[state] || 'state-idle');
+}
+
+function resetStages() {
+  if (!activeScenario) return;
+  activeScenario.stages.forEach((_, i) => setStageState(i, 'idle'));
+}
+
+function jumpToStage(i) {
+  if (pipelineRunning || !activeScenario) return;
+  const stage = activeScenario.stages[i];
+  if (!stage) return;
+  setLearn(stage.name, stage.learn, false);
+  if (stage.file) showFile(stage.file, stage.file_highlight || -1);
+  clearTerminal();
+  (stage.terminal_lines || []).forEach(l => appendTermLine(l));
+  for (let j = 0; j < i; j++) setStageState(j, 'passed');
+  setStageState(i, 'active');
+  for (let j = i + 1; j < activeScenario.stages.length; j++) setStageState(j, 'idle');
+}
+
+// ── File editor ──────────────────────────────────────────────
+let currentFiles = {};
+
+function renderFileTabs(files) {
+  currentFiles = files;
+  const tabs = document.getElementById('file-tabs');
+  tabs.innerHTML = Object.keys(files).map(f =>
+    `<div class="file-tab" id="tab-${CSS.escape(f)}" onclick="showFile('${f}',-1)">${f}</div>`
+  ).join('');
+}
+
+function showFile(name, highlightLine) {
+  const content = currentFiles[name];
+  if (content === undefined) return;
+  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('tab-' + CSS.escape(name));
+  if (tab) tab.classList.add('active');
+  const area = document.getElementById('code-area');
+  const lines = content.split('\n');
+  area.innerHTML = lines.map((ln, i) => {
+    const hl = (highlightLine >= 0 && i === highlightLine);
+    return `<div class="code-line${hl ? ' hl-line' : ''}">
+      <span class="line-num">${i + 1}</span>
+      <span class="line-content">${syntaxHL(ln, name)}</span>
+    </div>`;
+  }).join('');
+  if (highlightLine >= 0) {
+    const hel = area.querySelectorAll('.code-line')[highlightLine];
+    if (hel) hel.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+function syntaxHL(line, filename) {
+  let esc = line
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  if (filename.endsWith('.yml')) {
+    return esc
+      .replace(/^(\s*)([\w-]+)(:)/g, '$1<span class="kw">$2</span>$3')
+      .replace(/(#.*$)/g, '<span class="cmt">$1</span>')
+      .replace(/('[^']*')/g, '<span class="str">$1</span>');
+  }
+  if (filename === 'Dockerfile') {
+    return esc
+      .replace(/^(FROM|WORKDIR|COPY|RUN|EXPOSE|CMD|ENV)(\s)/g, '<span class="dec">$1</span>$2')
+      .replace(/(#.*$)/g, '<span class="cmt">$1</span>');
+  }
+  if (filename === 'requirements.txt') {
+    return esc.replace(/(#.*$)/g, '<span class="cmt">$1</span>');
+  }
+  return esc
+    .replace(/(#.*$)/g, '<span class="cmt">$1</span>')
+    .replace(/\b(from|import|def|return|if|elif|else|not|in|is|and|or|with|yield|class|for|while|try|except|raise|True|False|None|as|pass)\b/g, '<span class="kw">$1</span>')
+    .replace(/@(\w+)/g, '<span class="dec">@$1</span>')
+    .replace(/\b(Flask|jsonify|request|pytest|fixture|os|environ)\b/g, '<span class="fn">$1</span>')
+    .replace(/'([^']*)'/g, "<span class=\"str\">'$1'</span>")
+    .replace(/"([^"]*)"/g, '<span class="str">"$1"</span>')
+    .replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+}
+
+// ── Terminal ─────────────────────────────────────────────────
+function clearTerminal() {
+  document.getElementById('terminal').innerHTML = '';
+}
+
+function appendTermLine(line) {
+  const t = document.getElementById('terminal');
+  const cls = { cmd:'tl-cmd', ok:'tl-ok', err:'tl-err', warn:'tl-warn', info:'tl-info', dim:'tl-dim' }[line.type] || 'tl-dim';
+  const span = document.createElement('span');
+  span.className = 'tl ' + cls;
+  span.textContent = line.text || '';
+  t.appendChild(span);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── Learn box ────────────────────────────────────────────────
+function setLearn(title, body, isFail) {
+  const badge = document.getElementById('learn-badge');
+  badge.textContent = title;
+  badge.className = 'learn-badge' + (isFail ? ' fail' : '');
+  document.getElementById('learn-text').innerHTML = body || '';
+}
+
+// ── Status ───────────────────────────────────────────────────
+function setStatus(state, text) {
+  const el = document.getElementById('pipeline-status');
+  el.className = 'pipeline-status ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+// ── Controls ─────────────────────────────────────────────────
+function runPipeline() {
+  if (!activeScenario || pipelineRunning) return;
+  stepMode = false;
+  resetStages();
+  const speed = parseFloat(document.getElementById('speed-sel').value);
+  fetch('/api/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenario_id: activeScenario.id, speed })
+  });
+}
+
+function stepForward() {
+  if (!activeScenario || pipelineRunning) return;
+  const next = currentStageIdx + 1;
+  if (next >= activeScenario.stages.length) { resetUI(); return; }
+  jumpToStage(next);
+  currentStageIdx = next;
+}
+
+function pausePipeline() {
+  if (!pipelineRunning) return;
+  fetch('/api/pause', { method: 'POST' });
+}
+
+function stopPipeline() {
+  fetch('/api/stop', { method: 'POST' });
+}
+
+function resetUI() {
+  fetch('/api/stop', { method: 'POST' });
+  setTimeout(() => {
+    resetStages();
+    clearTerminal();
+    appendTermLine({ text: 'Pipeline reset. Ready.', type: 'dim' });
+    setStatus('idle', 'idle');
+    setLearn('Ready', 'Select a scenario and press Run Pipeline or Step through stages one by one.', false);
+    currentStageIdx = -1;
+    elapsedSec = 0;
+    testResults = { passed: 0, failed: 0 };
+    updateMetrics();
+    setButtons(false);
+    document.getElementById('success-banner').classList.remove('show');
+    document.getElementById('fail-overlay').classList.remove('show');
+    document.getElementById('btn-pause').innerHTML = '<span class="btn-icon">\u23f8</span> Pause';
+    if (activeScenario) {
+      document.getElementById('btn-run').disabled = false;
+      document.getElementById('btn-step').disabled = false;
+      document.getElementById('m-stage').textContent = '0/' + activeScenario.stages.length;
+    }
+  }, 150);
+}
+
+function setButtons(running) {
+  document.getElementById('btn-run').disabled   = running;
+  document.getElementById('btn-step').disabled  = running;
+  document.getElementById('btn-pause').disabled = !running;
+  document.getElementById('btn-stop').disabled  = !running;
+}
+
+// ── Timer ────────────────────────────────────────────────────
+function startTimer() {
+  elapsedSec = 0;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    elapsedSec++;
+    document.getElementById('m-time').textContent = elapsedSec + 's';
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+}
+
+function updateMetrics() {
+  document.getElementById('m-time').textContent = elapsedSec + 's';
+  document.getElementById('m-tests').textContent =
+    (testResults.passed || testResults.failed)
+      ? testResults.passed + 'ok ' + testResults.failed + 'fail'
+      : '\u2014';
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadScenarios();
+</script>
+</body>
+</html>

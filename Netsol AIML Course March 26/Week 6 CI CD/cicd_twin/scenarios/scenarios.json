@@ -1,0 +1,532 @@
+[
+  {
+    "id": "happy_path",
+    "title": "Scenario 1 — The Happy Path",
+    "subtitle": "Everything works perfectly",
+    "description": "A developer pushes a correct Flask app. All 6 pipeline stages pass and the app deploys to production. This is the ideal CI/CD flow.",
+    "difficulty": "Beginner",
+    "tags": ["basics", "deploy", "success"],
+    "color": "#059669",
+    "icon": "✅",
+    "files": {
+      "app.py": "from flask import Flask, jsonify, request\n\napp = Flask(__name__)\ntasks = {}\nnext_id = [1]\n\n\n@app.route('/health')\ndef health():\n    return jsonify({'status': 'healthy'}), 200\n\n\n@app.route('/tasks', methods=['GET'])\ndef get_tasks():\n    return jsonify({'tasks': list(tasks.values())})\n\n\n@app.route('/tasks', methods=['POST'])\ndef create_task():\n    data = request.get_json()\n    if not data or 'title' not in data:\n        return jsonify({'error': 'title required'}), 400\n    task = {'id': next_id[0], 'title': data['title']}\n    tasks[next_id[0]] = task\n    next_id[0] += 1\n    return jsonify(task), 201\n\n\nif __name__ == '__main__':\n    app.run(debug=True, port=5000)",
+      "test_app.py": "import pytest\nimport app as M\n\n\n@pytest.fixture\ndef client():\n    M.app.config['TESTING'] = True\n    M.tasks.clear()\n    M.next_id[0] = 1\n    with M.app.test_client() as c:\n        yield c\n\n\ndef test_health_returns_200(client):\n    r = client.get('/health')\n    assert r.status_code == 200\n\n\ndef test_health_status_field(client):\n    r = client.get('/health')\n    assert r.get_json()['status'] == 'healthy'\n\n\ndef test_create_task_201(client):\n    r = client.post('/tasks', json={'title': 'Learn CI/CD'})\n    assert r.status_code == 201\n\n\ndef test_missing_title_400(client):\n    r = client.post('/tasks', json={})\n    assert r.status_code == 400\n\n\ndef test_task_has_id(client):\n    r = client.post('/tasks', json={'title': 'Test'})\n    assert 'id' in r.get_json()",
+      "requirements.txt": "Flask==3.0.0\ngunicorn==21.2.0\npytest==7.4.0",
+      "Dockerfile": "FROM python:3.11-slim\n\nWORKDIR /app\n\n# Copy requirements first (Docker layer caching)\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# Copy application code\nCOPY . .\n\nEXPOSE 5000\n\n# gunicorn = production WSGI server\n# NEVER use app.run() in production\nCMD [\"gunicorn\", \"--workers\", \"4\",\n     \"--bind\", \"0.0.0.0:5000\", \"app:app\"]",
+      "ci.yml": "name: Flask CI/CD Pipeline\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v4\n        with:\n          python-version: '3.11'\n      - name: Install dependencies\n        run: pip install -r requirements.txt\n      - name: Lint\n        run: flake8 app.py --max-line-length=100\n      - name: Test\n        run: pytest test_app.py -v\n\n  deploy:\n    needs: test\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Build Docker image\n        run: docker build -t flask-api:latest .\n      - name: Deploy to production\n        run: |\n          docker push myrepo/flask-api:latest\n          heroku container:release web"
+    },
+    "stages": [
+      {
+        "id": "commit",
+        "name": "Code Commit",
+        "icon": "💻",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": -1,
+        "learn": "A developer writes code and runs <b>git push</b>. GitHub receives the push event and automatically triggers the CI/CD pipeline defined in <code>ci.yml</code>. The pipeline starts a fresh virtual machine for a clean, reproducible environment.",
+        "terminal_lines": [
+          {"text": "$ git add app.py test_app.py requirements.txt", "type": "cmd", "delay": 0.3},
+          {"text": "$ git commit -m \"feat: add task manager API\"", "type": "cmd", "delay": 0.3},
+          {"text": "[main a3f1c2b] feat: add task manager API", "type": "info", "delay": 0.2},
+          {"text": " 3 files changed, 42 insertions(+)", "type": "info", "delay": 0.2},
+          {"text": "$ git push origin main", "type": "cmd", "delay": 0.4},
+          {"text": "Counting objects: 5, done.", "type": "dim", "delay": 0.2},
+          {"text": "Writing objects: 100% (5/5), 1.2 KiB", "type": "dim", "delay": 0.2},
+          {"text": "To github.com/student/flask-app.git", "type": "info", "delay": 0.2},
+          {"text": "   c1d2e3f..a3f1c2b  main -> main", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> GitHub received push event!", "type": "ok", "delay": 0.2},
+          {"text": ">> Triggering CI/CD pipeline...", "type": "ok", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build — Install Dependencies",
+        "icon": "📦",
+        "outcome": "pass",
+        "file": "requirements.txt",
+        "file_highlight": -1,
+        "learn": "GitHub spins up a fresh <b>Ubuntu virtual machine</b>. It installs all packages listed in <code>requirements.txt</code> using pip. If any package fails to install the pipeline stops immediately — broken dependencies never reach production.",
+        "terminal_lines": [
+          {"text": "GitHub Actions runner: ubuntu-22.04", "type": "dim", "delay": 0.2},
+          {"text": "Cloning repository...", "type": "dim", "delay": 0.3},
+          {"text": "$ git checkout a3f1c2b", "type": "cmd", "delay": 0.3},
+          {"text": "HEAD is now at a3f1c2b", "type": "info", "delay": 0.2},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "$ pip install -r requirements.txt", "type": "cmd", "delay": 0.4},
+          {"text": "Collecting Flask==3.0.0", "type": "dim", "delay": 0.2},
+          {"text": "  Downloading Flask-3.0.0-py3-none-any.whl (99 kB)", "type": "dim", "delay": 0.2},
+          {"text": "Collecting gunicorn==21.2.0", "type": "dim", "delay": 0.2},
+          {"text": "Collecting pytest==7.4.0", "type": "dim", "delay": 0.2},
+          {"text": "Installing collected packages: Flask, gunicorn, pytest", "type": "dim", "delay": 0.3},
+          {"text": "Successfully installed Flask-3.0.0 gunicorn-21.2.0 pytest-7.4.0", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> BUILD stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "lint",
+        "name": "Lint — Code Style Check",
+        "icon": "🔍",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": -1,
+        "learn": "<b>flake8</b> scans every line of code for style violations. This enforces team coding standards — consistent indentation, line length, and naming. Even working code can be rejected here. Clean code is easier to maintain and review.",
+        "terminal_lines": [
+          {"text": "$ flake8 app.py --max-line-length=100", "type": "cmd", "delay": 0.4},
+          {"text": "Checking app.py...", "type": "dim", "delay": 0.3},
+          {"text": "  Checking indentation...", "type": "dim", "delay": 0.2},
+          {"text": "  Checking line length...", "type": "dim", "delay": 0.2},
+          {"text": "  Checking naming conventions...", "type": "dim", "delay": 0.2},
+          {"text": "  Checking imports...", "type": "dim", "delay": 0.2},
+          {"text": "No issues found.", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> LINT stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "test",
+        "name": "Test — Run pytest",
+        "icon": "🧪",
+        "outcome": "pass",
+        "file": "test_app.py",
+        "file_highlight": -1,
+        "learn": "<b>pytest</b> runs all 5 test functions automatically. Each test makes a real HTTP call to the Flask app using the built-in test client. If any assertion fails the test is marked FAILED and deployment is blocked. Tests are the safety net of CI/CD.",
+        "terminal_lines": [
+          {"text": "$ pytest test_app.py -v --tb=short", "type": "cmd", "delay": 0.4},
+          {"text": "======================== test session starts ========================", "type": "dim", "delay": 0.2},
+          {"text": "platform linux -- Python 3.11  pytest-7.4.0", "type": "dim", "delay": 0.2},
+          {"text": "collected 5 items", "type": "dim", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "PASSED test_app.py::test_health_returns_200", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_health_status_field", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_create_task_201", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_missing_title_400", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_task_has_id", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "5 passed in 0.87s", "type": "ok", "delay": 0.2},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> TEST stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "docker",
+        "name": "Docker — Build Image",
+        "icon": "🐳",
+        "outcome": "pass",
+        "file": "Dockerfile",
+        "file_highlight": -1,
+        "learn": "Docker packages your app + Python + all dependencies into one <b>portable image</b>. This image runs identically on any server — your Mac, staging, or production. It solves the classic 'it works on my machine!' problem forever.",
+        "terminal_lines": [
+          {"text": "$ docker build -t flask-api:latest .", "type": "cmd", "delay": 0.4},
+          {"text": "[1/5] FROM docker.io/python:3.11-slim", "type": "dim", "delay": 0.3},
+          {"text": "[2/5] WORKDIR /app", "type": "dim", "delay": 0.2},
+          {"text": "[3/5] COPY requirements.txt .", "type": "dim", "delay": 0.2},
+          {"text": "[4/5] RUN pip install --no-cache-dir -r requirements.txt", "type": "dim", "delay": 0.4},
+          {"text": "[5/5] COPY . .", "type": "dim", "delay": 0.2},
+          {"text": "Successfully built a4f2d1e3b5c6", "type": "ok", "delay": 0.3},
+          {"text": "Successfully tagged flask-api:latest", "type": "ok", "delay": 0.2},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "$ docker push myrepo/flask-api:latest", "type": "cmd", "delay": 0.4},
+          {"text": "Pushing layer: 47.3 MB", "type": "dim", "delay": 0.3},
+          {"text": "latest: digest sha256:8f3a2c... size: 1847", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> DOCKER stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "deploy",
+        "name": "Deploy — Release to Production",
+        "icon": "🚀",
+        "outcome": "pass",
+        "file": "ci.yml",
+        "file_highlight": -1,
+        "learn": "The Docker image is deployed to the production server. A <b>health check</b> hits <code>/health</code> to confirm the new version started correctly. Traffic is only routed to the new version after the health check passes. Congratulations — users see the new feature!",
+        "terminal_lines": [
+          {"text": "$ heroku container:push web --app flask-task-api", "type": "cmd", "delay": 0.4},
+          {"text": "Pushing flask-api:latest to Heroku registry...", "type": "dim", "delay": 0.4},
+          {"text": "Your image has been successfully pushed.", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "$ heroku container:release web --app flask-task-api", "type": "cmd", "delay": 0.4},
+          {"text": "Releasing image web to flask-task-api... done", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "Running deployment health check...", "type": "dim", "delay": 0.4},
+          {"text": "GET https://flask-task-api.herokuapp.com/health", "type": "info", "delay": 0.3},
+          {"text": "Response: {\"status\": \"healthy\"}  HTTP 200 OK", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Health check PASSED ✓", "type": "ok", "delay": 0.2},
+          {"text": ">> DEPLOY stage: SUCCESS ✓", "type": "ok", "delay": 0.2},
+          {"text": ">> Users can now access the new version!", "type": "ok", "delay": 0.3}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "test_failure",
+    "title": "Scenario 2 — Test Failure (Bug in Code)",
+    "subtitle": "A bug causes 2 of 5 tests to fail",
+    "description": "A developer accidentally returns HTTP 500 from the /health endpoint instead of 200. pytest catches the bug immediately at Stage 4, blocking deployment. The broken code never reaches users.",
+    "difficulty": "Intermediate",
+    "tags": ["bug", "test", "failure", "debugging"],
+    "color": "#DC2626",
+    "icon": "❌",
+    "files": {
+      "app.py": "from flask import Flask, jsonify, request\n\napp = Flask(__name__)\ntasks = {}\nnext_id = [1]\n\n\n@app.route('/health')\ndef health():\n    # BUG: should return 200, not 500!\n    return jsonify({'status': 'healthy'}), 500\n\n\n@app.route('/tasks', methods=['GET'])\ndef get_tasks():\n    return jsonify({'tasks': list(tasks.values())})\n\n\n@app.route('/tasks', methods=['POST'])\ndef create_task():\n    data = request.get_json()\n    if not data or 'title' not in data:\n        return jsonify({'error': 'title required'}), 400\n    task = {'id': next_id[0], 'title': data['title']}\n    tasks[next_id[0]] = task\n    next_id[0] += 1\n    return jsonify(task), 201",
+      "test_app.py": "import pytest\nimport app as M\n\n\n@pytest.fixture\ndef client():\n    M.app.config['TESTING'] = True\n    M.tasks.clear()\n    M.next_id[0] = 1\n    with M.app.test_client() as c:\n        yield c\n\n\ndef test_health_returns_200(client):\n    r = client.get('/health')\n    # This FAILS — app returns 500 instead of 200\n    assert r.status_code == 200\n\n\ndef test_health_status_field(client):\n    r = client.get('/health')\n    assert r.get_json()['status'] == 'healthy'\n\n\ndef test_create_task_201(client):\n    r = client.post('/tasks', json={'title': 'Learn CI/CD'})\n    assert r.status_code == 201\n\n\ndef test_missing_title_400(client):\n    r = client.post('/tasks', json={})\n    assert r.status_code == 400\n\n\ndef test_task_has_id(client):\n    r = client.post('/tasks', json={'title': 'Test'})\n    assert 'id' in r.get_json()",
+      "requirements.txt": "Flask==3.0.0\ngunicorn==21.2.0\npytest==7.4.0",
+      "Dockerfile": "FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 5000\nCMD [\"gunicorn\", \"--workers\", \"4\", \"--bind\", \"0.0.0.0:5000\", \"app:app\"]",
+      "ci.yml": "name: Flask CI/CD Pipeline\n\non:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v4\n        with:\n          python-version: '3.11'\n      - name: Install dependencies\n        run: pip install -r requirements.txt\n      - name: Lint\n        run: flake8 app.py\n      - name: Test\n        run: pytest test_app.py -v\n        # PIPELINE STOPS HERE — tests fail\n\n  deploy:\n    needs: test   # Never runs when test fails!\n    steps:\n      - name: Deploy\n        run: echo 'This will not execute'"
+    },
+    "stages": [
+      {
+        "id": "commit",
+        "name": "Code Commit",
+        "icon": "💻",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": 10,
+        "learn": "The developer pushes code with a bug on <b>line 11</b>: the health endpoint returns HTTP 500 instead of 200. The code looks almost correct — this is exactly the kind of mistake humans miss in code review but tests catch every time.",
+        "terminal_lines": [
+          {"text": "$ git add app.py", "type": "cmd", "delay": 0.3},
+          {"text": "$ git commit -m \"fix: update health endpoint\"", "type": "cmd", "delay": 0.3},
+          {"text": "[main b7c3d1e] fix: update health endpoint", "type": "info", "delay": 0.2},
+          {"text": " 1 file changed, 2 insertions(+), 1 deletion(-)", "type": "info", "delay": 0.2},
+          {"text": "$ git push origin main", "type": "cmd", "delay": 0.4},
+          {"text": "   a3f1c2b..b7c3d1e  main -> main", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Push accepted. Pipeline triggered!", "type": "ok", "delay": 0.2},
+          {"text": ">> Note: Bug on line 11 — returns 500 not 200", "type": "warn", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build — Install Dependencies",
+        "icon": "📦",
+        "outcome": "pass",
+        "file": "requirements.txt",
+        "file_highlight": -1,
+        "learn": "The build stage does NOT check code logic — it only installs packages. The bug is hidden inside a function body, so this stage passes just fine. This is why we need the test stage!",
+        "terminal_lines": [
+          {"text": "$ pip install -r requirements.txt", "type": "cmd", "delay": 0.4},
+          {"text": "Collecting Flask==3.0.0", "type": "dim", "delay": 0.2},
+          {"text": "Collecting pytest==7.4.0", "type": "dim", "delay": 0.2},
+          {"text": "Successfully installed all packages", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> BUILD stage: PASSED ✓ (bug not detected yet)", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "lint",
+        "name": "Lint — Code Style Check",
+        "icon": "🔍",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": 10,
+        "learn": "flake8 checks <b>code style only</b> — indentation, line length, imports. It does NOT execute the code or check return values. The bug (wrong status code) passes linting because <code>500</code> is syntactically valid Python.",
+        "terminal_lines": [
+          {"text": "$ flake8 app.py --max-line-length=100", "type": "cmd", "delay": 0.4},
+          {"text": "Checking style...", "type": "dim", "delay": 0.3},
+          {"text": "No style issues found.", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> LINT stage: PASSED ✓ (bug still not detected!)", "type": "ok", "delay": 0.2},
+          {"text": ">> Only tests will catch this logic error.", "type": "warn", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "test",
+        "name": "Test — Run pytest",
+        "icon": "🧪",
+        "outcome": "fail",
+        "file": "test_app.py",
+        "file_highlight": 15,
+        "learn": "pytest <b>actually runs the code</b> and checks what it returns. <code>test_health_returns_200</code> calls GET /health and asserts the response is 200. The app returns 500 — assertion fails — PIPELINE STOPS. The bug is caught before any user sees it!",
+        "fail_message": "2 tests failed — pipeline blocked at TEST stage",
+        "fail_learn": "This is CI/CD working perfectly! The bug was caught at Stage 4, before Docker build and before deployment. Fix the bug on line 11 of app.py (change 500 to 200), push again, and the pipeline will succeed.",
+        "terminal_lines": [
+          {"text": "$ pytest test_app.py -v --tb=short", "type": "cmd", "delay": 0.4},
+          {"text": "======================== test session starts ========================", "type": "dim", "delay": 0.2},
+          {"text": "collected 5 items", "type": "dim", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "FAILED test_app.py::test_health_returns_200", "type": "err", "delay": 0.4},
+          {"text": "  AssertionError: assert 500 == 200", "type": "err", "delay": 0.2},
+          {"text": "  Where: r.status_code = 500", "type": "err", "delay": 0.2},
+          {"text": "FAILED test_app.py::test_health_status_field", "type": "err", "delay": 0.4},
+          {"text": "PASSED test_app.py::test_create_task_201", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_missing_title_400", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_task_has_id", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "2 failed, 3 passed in 0.91s", "type": "err", "delay": 0.2},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> TEST stage: FAILED ✗ — PIPELINE STOPPED!", "type": "err", "delay": 0.2},
+          {"text": ">> Deployment blocked. Bug caught before production!", "type": "warn", "delay": 0.3}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "lint_failure",
+    "title": "Scenario 3 — Lint Failure (Bad Code Style)",
+    "subtitle": "Working code rejected for style violations",
+    "description": "The app works correctly and all tests pass, but the code has style violations: lines too long, missing blank lines, trailing whitespace. flake8 catches these at Stage 3 and blocks deployment.",
+    "difficulty": "Beginner",
+    "tags": ["lint", "style", "flake8", "failure"],
+    "color": "#D97706",
+    "icon": "⚠️",
+    "files": {
+      "app.py": "from flask import Flask,jsonify,request\napp = Flask(__name__)\ntasks = {}\nnext_id = [1]\n@app.route('/health')\ndef health():\n    return jsonify({'status': 'healthy'}), 200\n@app.route('/tasks', methods=['GET'])\ndef get_tasks():\n    return jsonify({'tasks': list(tasks.values()), 'count': len(tasks), 'version': '1.0', 'extra': 'data here too'})  \n@app.route('/tasks', methods=['POST'])\ndef create_task():\n    data = request.get_json()\n    if not data or 'title' not in data:\n        return jsonify({'error': 'title required'}), 400\n    task = {'id': next_id[0], 'title': data['title']}\n    tasks[next_id[0]] = task\n    next_id[0] += 1\n    return jsonify(task), 201",
+      "test_app.py": "import pytest\nimport app as M\n\n\n@pytest.fixture\ndef client():\n    M.app.config['TESTING'] = True\n    M.tasks.clear()\n    M.next_id[0] = 1\n    with M.app.test_client() as c:\n        yield c\n\n\ndef test_health_returns_200(client):\n    r = client.get('/health')\n    assert r.status_code == 200\n\n\ndef test_create_task_201(client):\n    r = client.post('/tasks', json={'title': 'Test'})\n    assert r.status_code == 201",
+      "requirements.txt": "Flask==3.0.0\ngunicorn==21.2.0\npytest==7.4.0",
+      "Dockerfile": "FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY . .\nEXPOSE 5000\nCMD [\"gunicorn\", \"app:app\", \"--bind\", \"0.0.0.0:5000\"]",
+      "ci.yml": "name: Flask Pipeline\n\non:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install\n        run: pip install -r requirements.txt\n      - name: Lint\n        run: flake8 app.py  # FAILS HERE\n      - name: Test\n        run: pytest test_app.py -v"
+    },
+    "stages": [
+      {
+        "id": "commit",
+        "name": "Code Commit",
+        "icon": "💻",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": -1,
+        "learn": "The developer pushes code that <b>works correctly</b> but has poor formatting: missing blank lines between functions, a line over 100 characters, trailing whitespace, and cramped imports. The code runs fine locally but violates the team's style rules.",
+        "terminal_lines": [
+          {"text": "$ git add app.py", "type": "cmd", "delay": 0.3},
+          {"text": "$ git commit -m \"add get_tasks with details\"", "type": "cmd", "delay": 0.3},
+          {"text": "[main c9f3a1d] add get_tasks with details", "type": "info", "delay": 0.2},
+          {"text": " 1 file changed, 8 insertions(+)", "type": "info", "delay": 0.2},
+          {"text": "$ git push origin main", "type": "cmd", "delay": 0.4},
+          {"text": "   b7c3d1e..c9f3a1d  main -> main", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Push accepted. Pipeline triggered!", "type": "ok", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build — Install Dependencies",
+        "icon": "📦",
+        "outcome": "pass",
+        "file": "requirements.txt",
+        "file_highlight": -1,
+        "learn": "Packages install successfully. The build stage only cares about dependencies — not code style or logic. The lint violations will be caught in the next stage.",
+        "terminal_lines": [
+          {"text": "$ pip install -r requirements.txt", "type": "cmd", "delay": 0.4},
+          {"text": "Successfully installed Flask-3.0.0 pytest-7.4.0", "type": "ok", "delay": 0.4},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> BUILD stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "lint",
+        "name": "Lint — Code Style Check",
+        "icon": "🔍",
+        "outcome": "fail",
+        "file": "app.py",
+        "file_highlight": 9,
+        "learn": "flake8 scans every line and finds multiple violations. <b>E302</b>: missing blank lines between functions. <b>E501</b>: line 10 is 112 characters (max is 100). <b>W291</b>: trailing whitespace. Even though the code works, the pipeline stops here.",
+        "fail_message": "3 lint violations — pipeline blocked at LINT stage",
+        "fail_learn": "Fix the style issues in app.py: add 2 blank lines between functions, shorten line 10 to under 100 chars, and remove trailing whitespace. Run 'flake8 app.py' locally before pushing to check style yourself.",
+        "terminal_lines": [
+          {"text": "$ flake8 app.py --max-line-length=100", "type": "cmd", "delay": 0.4},
+          {"text": "Scanning app.py...", "type": "dim", "delay": 0.3},
+          {"text": "app.py:1:1: E401 multiple imports on one line", "type": "err", "delay": 0.3},
+          {"text": "app.py:5:1: E302 expected 2 blank lines, found 0", "type": "err", "delay": 0.3},
+          {"text": "app.py:10:101: E501 line too long (112 > 100 characters)", "type": "err", "delay": 0.3},
+          {"text": "app.py:10:113: W291 trailing whitespace", "type": "warn", "delay": 0.3},
+          {"text": "app.py:11:1: E302 expected 2 blank lines, found 0", "type": "err", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "5 issues found in app.py", "type": "err", "delay": 0.2},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> LINT stage: FAILED ✗ — Fix style errors!", "type": "err", "delay": 0.2},
+          {"text": ">> Tests and deploy will NOT run until lint passes.", "type": "warn", "delay": 0.3}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "build_failure",
+    "title": "Scenario 4 — Build Failure (Missing Dependency)",
+    "subtitle": "A typo in requirements.txt crashes the build",
+    "description": "A developer accidentally misspells a package name in requirements.txt. pip cannot install the non-existent package, so the pipeline fails at the very first stage — before any tests run.",
+    "difficulty": "Beginner",
+    "tags": ["build", "pip", "dependency", "failure"],
+    "color": "#7C3AED",
+    "icon": "💥",
+    "files": {
+      "app.py": "from flask import Flask, jsonify\n\napp = Flask(__name__)\n\n\n@app.route('/health')\ndef health():\n    return jsonify({'status': 'healthy'}), 200\n\n\nif __name__ == '__main__':\n    app.run(debug=True)",
+      "test_app.py": "import pytest\nimport app as M\n\n\n@pytest.fixture\ndef client():\n    M.app.config['TESTING'] = True\n    with M.app.test_client() as c:\n        yield c\n\n\ndef test_health(client):\n    r = client.get('/health')\n    assert r.status_code == 200",
+      "requirements.txt": "Flaskk==3.0.0\ngunicorn==21.2.0\npytest==7.4.0\n\n# ^ TYPO: 'Flaskk' does not exist on PyPI!\n# Correct spelling: Flask",
+      "Dockerfile": "FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 5000\nCMD [\"gunicorn\", \"app:app\"]",
+      "ci.yml": "name: Flask Pipeline\n\non:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: pip install -r requirements.txt\n        # FAILS HERE — 'Flaskk' not found on PyPI\n      - name: Lint\n        run: flake8 app.py\n      - name: Test\n        run: pytest test_app.py -v"
+    },
+    "stages": [
+      {
+        "id": "commit",
+        "name": "Code Commit",
+        "icon": "💻",
+        "outcome": "pass",
+        "file": "requirements.txt",
+        "file_highlight": 0,
+        "learn": "The developer pushes code with a <b>typo in requirements.txt</b>: <code>Flaskk</code> instead of <code>Flask</code>. This kind of mistake is easy to miss when editing plain text files. The CI/CD pipeline catches it immediately.",
+        "terminal_lines": [
+          {"text": "$ git add requirements.txt app.py", "type": "cmd", "delay": 0.3},
+          {"text": "$ git commit -m \"add gunicorn to requirements\"", "type": "cmd", "delay": 0.3},
+          {"text": "[main d2e4f6a] add gunicorn to requirements", "type": "info", "delay": 0.2},
+          {"text": "$ git push origin main", "type": "cmd", "delay": 0.4},
+          {"text": "   c9f3a1d..d2e4f6a  main -> main", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Push accepted. Pipeline triggered!", "type": "ok", "delay": 0.2},
+          {"text": ">> Warning: typo spotted in requirements.txt line 1", "type": "warn", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build — Install Dependencies",
+        "icon": "📦",
+        "outcome": "fail",
+        "file": "requirements.txt",
+        "file_highlight": 0,
+        "learn": "pip tries to install <code>Flaskk==3.0.0</code> from PyPI. No package with that name exists. pip returns an error exit code — the pipeline stops immediately. <b>This is actually good</b>: we catch the problem in seconds, not after spending time running tests.",
+        "fail_message": "pip cannot find package 'Flaskk' — typo in requirements.txt",
+        "fail_learn": "Fix the typo on line 1 of requirements.txt: change 'Flaskk' to 'Flask'. Always check package names carefully, or run 'pip install -r requirements.txt' locally first to verify before pushing.",
+        "terminal_lines": [
+          {"text": "$ pip install -r requirements.txt", "type": "cmd", "delay": 0.4},
+          {"text": "Collecting Flaskk==3.0.0", "type": "dim", "delay": 0.4},
+          {"text": "  ERROR: Could not find a version that satisfies", "type": "err", "delay": 0.3},
+          {"text": "         the requirement Flaskk==3.0.0", "type": "err", "delay": 0.2},
+          {"text": "  ERROR: No matching distribution found for Flaskk==3.0.0", "type": "err", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "Did you mean: Flask?", "type": "warn", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> BUILD stage: FAILED ✗", "type": "err", "delay": 0.2},
+          {"text": ">> Lint and Tests will NOT run — fix requirements.txt!", "type": "err", "delay": 0.3}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rollback",
+    "title": "Scenario 5 — Deploy & Auto-Rollback",
+    "subtitle": "Health check fails — old version restored",
+    "description": "All pipeline stages pass. The new Docker image deploys. But the health check fails — the server returns 503. The CI/CD system automatically rolls back to the previous working version. Zero downtime for users.",
+    "difficulty": "Advanced",
+    "tags": ["deploy", "rollback", "health-check", "production"],
+    "color": "#0891B2",
+    "icon": "🔄",
+    "files": {
+      "app.py": "from flask import Flask, jsonify, request\nimport os\n\napp = Flask(__name__)\ntasks = {}\nnext_id = [1]\n\n# This env variable is set wrong in production config\nDB_URL = os.environ.get('DATABASE_URL', None)\n\n\n@app.route('/health')\ndef health():\n    # Health check verifies DB connection\n    if DB_URL is None:\n        # Simulates: DB not configured in prod env\n        return jsonify({'status': 'unhealthy', 'reason': 'no database'}), 503\n    return jsonify({'status': 'healthy'}), 200\n\n\n@app.route('/tasks', methods=['GET'])\ndef get_tasks():\n    return jsonify({'tasks': list(tasks.values())})\n\n\n@app.route('/tasks', methods=['POST'])\ndef create_task():\n    data = request.get_json()\n    if not data or 'title' not in data:\n        return jsonify({'error': 'title required'}), 400\n    task = {'id': next_id[0], 'title': data['title']}\n    tasks[next_id[0]] = task\n    next_id[0] += 1\n    return jsonify(task), 201",
+      "test_app.py": "import pytest\nimport os\nos.environ['DATABASE_URL'] = 'sqlite:///test.db'\nimport app as M\n\n\n@pytest.fixture\ndef client():\n    M.app.config['TESTING'] = True\n    with M.app.test_client() as c:\n        yield c\n\n\ndef test_health_ok_with_db(client):\n    # Tests pass because DATABASE_URL is set in test env\n    r = client.get('/health')\n    assert r.status_code == 200\n\n\ndef test_create_task(client):\n    r = client.post('/tasks', json={'title': 'Test'})\n    assert r.status_code == 201",
+      "requirements.txt": "Flask==3.0.0\ngunicorn==21.2.0\npytest==7.4.0",
+      "Dockerfile": "FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 5000\n# DATABASE_URL must be set as environment variable!\nCMD [\"gunicorn\", \"app:app\", \"--bind\", \"0.0.0.0:5000\"]",
+      "ci.yml": "name: Flask Pipeline with Rollback\n\non:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      DATABASE_URL: sqlite:///test.db\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install\n        run: pip install -r requirements.txt\n      - name: Lint\n        run: flake8 app.py\n      - name: Test\n        run: pytest test_app.py -v\n\n  deploy:\n    needs: test\n    steps:\n      - name: Deploy new version\n        run: docker push && heroku release\n      - name: Health check\n        run: |\n          sleep 10\n          curl -f https://app.example.com/health || (\n            echo 'Health check FAILED — rolling back!'\n            heroku rollback\n          )"
+    },
+    "stages": [
+      {
+        "id": "commit",
+        "name": "Code Commit",
+        "icon": "💻",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": 13,
+        "learn": "The developer adds a database health check to the <code>/health</code> endpoint. The check reads the <code>DATABASE_URL</code> environment variable. In the test environment this is set, so tests pass. But the <b>production server was never configured with this variable</b>.",
+        "terminal_lines": [
+          {"text": "$ git commit -m \"feat: add DB health check\"", "type": "cmd", "delay": 0.3},
+          {"text": "[main e5g7h9i] feat: add DB health check", "type": "info", "delay": 0.2},
+          {"text": "$ git push origin main", "type": "cmd", "delay": 0.4},
+          {"text": "   d2e4f6a..e5g7h9i  main -> main", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Push accepted. Pipeline triggered!", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build — Install Dependencies",
+        "icon": "📦",
+        "outcome": "pass",
+        "file": "requirements.txt",
+        "file_highlight": -1,
+        "learn": "Dependencies install cleanly. The missing environment variable won't be detected until the app actually starts on the production server.",
+        "terminal_lines": [
+          {"text": "$ pip install -r requirements.txt", "type": "cmd", "delay": 0.4},
+          {"text": "Successfully installed Flask-3.0.0 pytest-7.4.0", "type": "ok", "delay": 0.4},
+          {"text": ">> BUILD stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "lint",
+        "name": "Lint — Code Style Check",
+        "icon": "🔍",
+        "outcome": "pass",
+        "file": "app.py",
+        "file_highlight": -1,
+        "learn": "Code style is clean. flake8 passes. The environment variable problem is a <b>configuration issue</b>, not a code style issue — linting cannot detect it.",
+        "terminal_lines": [
+          {"text": "$ flake8 app.py --max-line-length=100", "type": "cmd", "delay": 0.4},
+          {"text": "No style issues found.", "type": "ok", "delay": 0.3},
+          {"text": ">> LINT stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "test",
+        "name": "Test — Run pytest",
+        "icon": "🧪",
+        "outcome": "pass",
+        "file": "test_app.py",
+        "file_highlight": 2,
+        "learn": "Tests pass because <b>line 3 sets DATABASE_URL</b> for the test environment. The health check works in tests. This is a tricky real-world scenario: tests pass but production behaves differently because environment configuration differs.",
+        "terminal_lines": [
+          {"text": "$ pytest test_app.py -v", "type": "cmd", "delay": 0.4},
+          {"text": "Env: DATABASE_URL=sqlite:///test.db", "type": "dim", "delay": 0.2},
+          {"text": "PASSED test_app.py::test_health_ok_with_db", "type": "ok", "delay": 0.3},
+          {"text": "PASSED test_app.py::test_create_task", "type": "ok", "delay": 0.3},
+          {"text": "2 passed in 0.44s", "type": "ok", "delay": 0.2},
+          {"text": ">> TEST stage: PASSED ✓", "type": "ok", "delay": 0.2},
+          {"text": ">> Caution: prod env config not tested!", "type": "warn", "delay": 0.3}
+        ]
+      },
+      {
+        "id": "docker",
+        "name": "Docker — Build Image",
+        "icon": "🐳",
+        "outcome": "pass",
+        "file": "Dockerfile",
+        "file_highlight": -1,
+        "learn": "The Docker image builds and pushes successfully. It does not know about the missing environment variable — the image is just the packaged code. Environment variables are injected at runtime by the server.",
+        "terminal_lines": [
+          {"text": "$ docker build -t flask-api:v2.0 .", "type": "cmd", "delay": 0.4},
+          {"text": "Successfully built f9e8d7c6b5a4", "type": "ok", "delay": 0.4},
+          {"text": "$ docker push myrepo/flask-api:v2.0", "type": "cmd", "delay": 0.3},
+          {"text": "Pushed: sha256:f9e8d7...", "type": "ok", "delay": 0.3},
+          {"text": ">> DOCKER stage: PASSED ✓", "type": "ok", "delay": 0.2}
+        ]
+      },
+      {
+        "id": "deploy",
+        "name": "Deploy — Health Check & Rollback",
+        "icon": "🔄",
+        "outcome": "fail",
+        "file": "ci.yml",
+        "file_highlight": 24,
+        "learn": "The new container starts on production. The CI/CD system waits 10 seconds then calls <code>/health</code>. The server returns <b>503 Unhealthy</b> because DATABASE_URL is not set. The system <b>automatically rolls back</b> to the previous version — users experience zero downtime!",
+        "fail_message": "Health check failed — automatic rollback to v1.0 triggered",
+        "fail_learn": "This is rollback in action — a safety net after deployment! The fix: set DATABASE_URL as an environment variable on the production server (in Heroku Config Vars, AWS Secrets Manager, etc). Never hardcode secrets in code.",
+        "terminal_lines": [
+          {"text": "$ heroku container:release web --app flask-task-api", "type": "cmd", "delay": 0.4},
+          {"text": "Releasing v2.0 to flask-task-api... done", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "Waiting 10 seconds for app to start...", "type": "dim", "delay": 0.4},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": "Running post-deploy health check...", "type": "dim", "delay": 0.3},
+          {"text": "GET https://flask-task-api.herokuapp.com/health", "type": "info", "delay": 0.3},
+          {"text": "Response: {\"status\": \"unhealthy\", \"reason\": \"no database\"}  HTTP 503", "type": "err", "delay": 0.4},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Health check FAILED ✗", "type": "err", "delay": 0.2},
+          {"text": ">> Triggering automatic rollback to v1.0!", "type": "warn", "delay": 0.3},
+          {"text": "$ heroku rollback --app flask-task-api", "type": "cmd", "delay": 0.4},
+          {"text": "Rolling back to v1.0... done", "type": "ok", "delay": 0.3},
+          {"text": "Users are still on v1.0 — zero downtime!", "type": "ok", "delay": 0.3},
+          {"text": "", "type": "dim", "delay": 0.1},
+          {"text": ">> Fix: set DATABASE_URL in production config!", "type": "warn", "delay": 0.3}
+        ]
+      }
+    ]
+  }
+]
