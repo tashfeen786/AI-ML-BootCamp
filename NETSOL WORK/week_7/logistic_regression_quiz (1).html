@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistic Regression Mastery Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --correct: #10b981;
+    --wrong: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease;
+  }
+  .header .tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .progress-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+  .progress-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+  }
+  .score-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    white-space: nowrap;
+  }
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    margin-top: 40px;
+  }
+  .section-label .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    flex-shrink: 0;
+  }
+  .section-label span {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .section-label .line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s, transform 0.2s;
+    animation: slideIn 0.4s ease both;
+  }
+  .question-card:hover { border-color: rgba(0,212,255,0.2); }
+  .question-card.answered-correct { border-color: var(--correct); background: rgba(16,185,129,0.05); }
+  .question-card.answered-wrong { border-color: var(--wrong); background: rgba(239,68,68,0.05); }
+  .q-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+  .q-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  .q-text { font-size: 15px; font-weight: 600; line-height: 1.6; color: var(--text); flex: 1; }
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    line-height: 1.8;
+    white-space: pre-line;
+  }
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    width: 100%;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.05);
+    transform: translateX(4px);
+  }
+  .option-btn .opt-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 2px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .option-btn.correct { border-color: var(--correct); background: rgba(16,185,129,0.1); }
+  .option-btn.wrong { border-color: var(--wrong); background: rgba(239,68,68,0.1); }
+  .option-btn:disabled { cursor: default; }
+  .result-icon { float: right; font-size: 18px; margin-top: -2px; margin-left: auto; padding-left: 8px; flex-shrink: 0; }
+  .explanation {
+    display: none;
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #cbd5e1;
+  }
+  .explanation.show { display: block; animation: fadeUp 0.3s ease; }
+  .explanation .exp-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .explanation .exp-title::before { content: '▶'; font-size: 8px; }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 8px 0 12px;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint::before { content: '💡'; font-style: normal; font-size: 12px; }
+  .final-results {
+    display: none;
+    text-align: center;
+    padding: 48px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    margin-top: 40px;
+  }
+  .final-results.show { display: block; animation: fadeUp 0.6s ease; }
+  .final-results h2 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .score-circle {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    border: 4px solid var(--accent);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 24px auto;
+    background: rgba(0,212,255,0.05);
+    box-shadow: 0 0 30px rgba(0,212,255,0.15);
+  }
+  .score-circle .big-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .score-circle .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .grade-text { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .grade-msg { color: var(--muted); font-size: 14px; max-width: 400px; margin: 0 auto 24px; }
+  .stats-row { display: flex; justify-content: center; gap: 24px; margin: 24px 0; flex-wrap: wrap; }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    min-width: 100px;
+  }
+  .stat-box .s-val { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 700; }
+  .stat-box .s-lab { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .reset-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--bg);
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    padding: 14px 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+  }
+  .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+  @media (max-width: 600px) {
+    .container { padding: 20px 14px 60px; }
+    .question-card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="tag">Machine Learning · Interactive Quiz</div>
+    <h1>Logistic Regression<br>Mastery Test</h1>
+    <p>38 MCQs · Sigmoid · Cross-Entropy · vs Linear · Multinomial · OvR · OvO · Calculations · Intuition. Answer each to reveal detailed explanations.</p>
+  </div>
+  <div class="progress-bar-wrap">
+    <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);">Progress</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-text" id="progressText">0 / 38</span>
+    <span class="score-badge" id="scoreBadge">Score: 0</span>
+  </div>
+  <div id="quizContainer"></div>
+  <div class="final-results" id="finalResults"></div>
+</div>
+
+<script>
+const questions = [
+  {
+    section: "SECTION 01 · Why Logistic Regression?",
+    q: "Why can't we use Linear Regression for binary classification?",
+    hint: "Think about what range of values linear regression can produce",
+    formula: null,
+    options: [
+      "A) Linear regression is too slow for classification",
+      "B) Linear regression outputs values outside [0,1], making probability interpretation invalid",
+      "C) Linear regression requires too many features",
+      "D) Linear regression can't handle categorical inputs"
+    ],
+    answer: 1,
+    exp: "Linear regression predicts values from −∞ to +∞. For classification we need probabilities between 0 and 1. Predicting P(y=1|x)=1.5 or P(y=1|x)=−0.3 is nonsensical. Also, outliers drag the decision boundary badly. Logistic regression solves both by applying the sigmoid function to squash output into (0,1)."
+  },
+  {
+    section: null,
+    q: "Which problem BEST illustrates why linear regression fails at classification?",
+    hint: "Think of extreme outlier effects",
+    formula: null,
+    options: [
+      "A) A new point far from the boundary doesn't affect the linear model",
+      "B) Adding a very extreme positive example shifts the linear regression line, misclassifying nearby positive examples",
+      "C) Linear regression cannot compute a slope for binary data",
+      "D) Linear regression outputs always equal 0.5 for balanced datasets"
+    ],
+    answer: 1,
+    exp: "Classic failure: if you fit a linear regression line to tumor size vs malignancy (0/1), adding a new large tumor far to the right shifts the entire line, potentially misclassifying medium-sized tumors that were previously correct. The boundary is distorted by extreme points. Logistic regression's sigmoid is robust to this."
+  },
+  {
+    section: "SECTION 02 · The Sigmoid Function",
+    q: "What is the sigmoid function formula and what range does it map to?",
+    formula: "σ(z) = ??? where z = w·x + b",
+    options: [
+      "A) σ(z) = z², maps to [0, ∞)",
+      "B) σ(z) = 1/(1+e^(−z)), maps to (0, 1)",
+      "C) σ(z) = max(0,z), maps to [0, ∞)",
+      "D) σ(z) = tanh(z), maps to (−1, 1)"
+    ],
+    answer: 1,
+    exp: "Sigmoid: σ(z) = 1/(1+e^{−z}). At z=0: σ=0.5. As z→+∞: σ→1. As z→−∞: σ→0. The output is always in (0,1) — never exactly 0 or 1 — making it a valid probability. 'Logistic' function and 'sigmoid' are used interchangeably in this context."
+  },
+  {
+    section: null,
+    q: "Calculate σ(0). What does this value intuitively mean?",
+    formula: "σ(z) = 1 / (1 + e^(−z))\nCompute: σ(0) = 1 / (1 + e^0) = 1 / (1 + 1) = ?",
+    options: [
+      "A) 0 — model predicts negative class with certainty",
+      "B) 1 — model predicts positive class with certainty",
+      "C) 0.5 — maximum uncertainty, both classes equally likely",
+      "D) 0.5 — always predict positive class"
+    ],
+    answer: 2,
+    exp: "σ(0) = 1/(1+1) = 0.5. When the linear combination z = w·x+b = 0, the model is completely undecided — 50% chance for either class. This is the decision boundary point! We switch from predicting 0 to predicting 1 exactly here. The boundary is the hyperplane w·x+b = 0."
+  },
+  {
+    section: null,
+    q: "Calculate σ(2). (Use: e^(−2) ≈ 0.135)",
+    formula: "σ(2) = 1 / (1 + e^(−2))\n       = 1 / (1 + 0.135)\n       = 1 / 1.135 = ?",
+    options: [
+      "A) ≈ 0.50",
+      "B) ≈ 0.73",
+      "C) ≈ 0.88",
+      "D) ≈ 0.99"
+    ],
+    answer: 2,
+    exp: "σ(2) = 1/1.135 ≈ 0.881. The model predicts 88% probability for class 1 when z=2. Symmetry: σ(−2) = 1 − 0.881 = 0.119. As z increases, probability climbs toward 1. The sigmoid is symmetric around (0, 0.5)."
+  },
+  {
+    section: null,
+    q: "What is the derivative of σ(z)?",
+    hint: "This elegant formula appears in backpropagation",
+    formula: "dσ/dz = ?",
+    options: [
+      "A) dσ/dz = σ(z)",
+      "B) dσ/dz = 1 − σ(z)",
+      "C) dσ/dz = σ(z) · (1 − σ(z))",
+      "D) dσ/dz = σ(z)²"
+    ],
+    answer: 2,
+    exp: "dσ/dz = σ(z)·(1−σ(z)). Proof: let s=σ(z)=1/(1+e^{−z}). Then ds/dz = e^{−z}/(1+e^{−z})² = [1/(1+e^{−z})]·[e^{−z}/(1+e^{−z})] = s·(1−s). At z=0: derivative = 0.5×0.5 = 0.25 (maximum). At extremes: derivative → 0 (vanishing gradient problem)."
+  },
+  {
+    section: null,
+    q: "The logit function is the INVERSE of sigmoid. Compute logit(0.731). (ln(2.717) ≈ 1.0)",
+    formula: "logit(p) = ln( p / (1−p) )\nlogit(0.731) = ln( 0.731 / 0.269 ) = ln(2.717) = ?",
+    options: [
+      "A) ≈ 0",
+      "B) ≈ 1",
+      "C) ≈ 2",
+      "D) ≈ 3"
+    ],
+    answer: 1,
+    exp: "logit(0.731) = ln(0.731/0.269) = ln(2.717) ≈ 1.0. This confirms σ(1) ≈ 0.731. The logit (log-odds) is what logistic regression models as a linear function of features: log(P/(1−P)) = w·x+b. It transforms probability [0,1] → (−∞, +∞), the reverse of sigmoid."
+  },
+  {
+    section: "SECTION 03 · Calculations with Logistic Regression",
+    q: "Given w=[2, 0.5], b=−10, and x=[3, 7] (study hours, sleep hours), what is z and the predicted pass probability?",
+    formula: "z = w₁x₁ + w₂x₂ + b\n  = 2(3) + 0.5(7) + (−10)\n  = 6 + 3.5 − 10 = ?\nThen σ(z) = 1/(1+e^(−z))\nIf z=−0.5: e^0.5 ≈ 1.649",
+    options: [
+      "A) z=2.5, P≈0.92",
+      "B) z=−0.5, P≈0.38",
+      "C) z=3.5, P≈0.97",
+      "D) z=1.0, P≈0.73"
+    ],
+    answer: 1,
+    exp: "z = 2×3 + 0.5×7 + (−10) = 6 + 3.5 − 10 = −0.5. σ(−0.5) = 1/(1+e^{0.5}) = 1/(1+1.649) = 1/2.649 ≈ 0.378. So 37.8% chance of passing — model predicts FAIL. The negative z means we're below the decision boundary. Need more study hours or sleep for the prediction to flip."
+  },
+  {
+    section: null,
+    q: "For the above model, what value of study hours x₁ exactly hits the decision boundary (z=0), keeping sleep=7?",
+    formula: "Set z = 2x₁ + 0.5(7) − 10 = 0\n2x₁ + 3.5 − 10 = 0\n2x₁ = 6.5\nx₁ = ?",
+    options: [
+      "A) x₁ = 2.5 hours",
+      "B) x₁ = 3.25 hours",
+      "C) x₁ = 4.0 hours",
+      "D) x₁ = 5.0 hours"
+    ],
+    answer: 1,
+    exp: "2x₁ + 3.5 − 10 = 0 → 2x₁ = 6.5 → x₁ = 3.25 hours. At exactly 3.25 hours of study (with 7 hours sleep), the model is 50/50 uncertain. More than 3.25 hours → predicts pass. Less → predicts fail. This is how you read a logistic regression decision boundary."
+  },
+  {
+    section: "SECTION 04 · Loss Functions",
+    q: "Why don't we use Mean Squared Error (MSE) with logistic regression?",
+    formula: "MSE + sigmoid = non-convex loss landscape",
+    options: [
+      "A) MSE is too slow to compute with sigmoid",
+      "B) MSE with sigmoid creates a non-convex loss with many local minima — gradient descent gets stuck",
+      "C) MSE always equals zero for binary data",
+      "D) MSE cannot compute gradients through sigmoid"
+    ],
+    answer: 1,
+    exp: "Composing MSE (ŷ−y)² with sigmoid creates a non-convex loss surface with multiple local minima. Gradient descent may converge to a suboptimal solution. Binary Cross-Entropy is mathematically derived to be convex when paired with sigmoid — any local minimum is THE global minimum. This is why BCE is the correct and standard choice for logistic regression."
+  },
+  {
+    section: null,
+    q: "What is the Binary Cross-Entropy (Log Loss) formula for a single sample?",
+    formula: "L = ???",
+    options: [
+      "A) L = (ŷ − y)²",
+      "B) L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]",
+      "C) L = |y − ŷ|",
+      "D) L = ŷ · log(y)"
+    ],
+    answer: 1,
+    exp: "BCE: L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]. When y=1: L = −log(ŷ). Good prediction (ŷ≈1) → small loss. Wrong prediction (ŷ≈0) → L→∞. When y=0: L = −log(1−ŷ). Good prediction (ŷ≈0) → small loss. Wrong prediction (ŷ≈1) → L→∞. Crucially, confident WRONG predictions are penalized extremely heavily."
+  },
+  {
+    section: null,
+    q: "Calculate BCE loss: true label y=1, predicted probability ŷ=0.9. Use log(0.9)≈−0.105.",
+    formula: "L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]\n  = −[1·log(0.9) + 0·log(0.1)]\n  = −log(0.9) ≈ ?",
+    options: [
+      "A) L ≈ 0.105 (small — good prediction)",
+      "B) L ≈ 2.303 (large — bad prediction)",
+      "C) L = (1−0.9)² = 0.01",
+      "D) L = 0.9"
+    ],
+    answer: 0,
+    exp: "L = −log(0.9) ≈ 0.105. Small loss because prediction (90%) is close to truth (100%). Compare: if ŷ=0.1 (very wrong), L = −log(0.1) ≈ 2.303 — 22× larger penalty. The log function grows steeply as predictions move away from truth, strongly incentivizing confident correct predictions."
+  },
+  {
+    section: null,
+    q: "Calculate BCE loss: true label y=0, predicted ŷ=0.8 (wrong confident prediction). Use log(0.2)≈−1.609.",
+    formula: "L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]\n  = −[0·log(0.8) + 1·log(1−0.8)]\n  = −log(0.2) ≈ ?",
+    options: [
+      "A) L ≈ 0.223",
+      "B) L ≈ 1.609 (large — confident wrong prediction)",
+      "C) L = 0.64",
+      "D) L = 0"
+    ],
+    answer: 1,
+    exp: "L = −log(0.2) ≈ 1.609. The model predicted 80% for class 1, but truth is 0 — a confident mistake. The high loss (1.609) creates a strong gradient signal that heavily penalizes and corrects this overconfident error during training. This is why log loss is preferred over MSE for classification."
+  },
+  {
+    section: null,
+    q: "What is the gradient of BCE loss w.r.t. weight w? (This is used in gradient descent.)",
+    formula: "L = −[y·log(σ(z)) + (1−y)·log(1−σ(z))]\nz = w·x + b",
+    options: [
+      "A) ∂L/∂w = (ŷ − y) · x",
+      "B) ∂L/∂w = y · x",
+      "C) ∂L/∂w = σ(z) · x",
+      "D) ∂L/∂w = (y − ŷ)² · x"
+    ],
+    answer: 0,
+    exp: "∂L/∂w = (ŷ−y)·x where ŷ=σ(z). Beautiful chain rule cancellation: ∂L/∂ŷ × ∂ŷ/∂z × ∂z/∂w = [(ŷ−y)/(ŷ(1−ŷ))] × [ŷ(1−ŷ)] × x = (ŷ−y)·x. The ŷ(1−ŷ) terms cancel! Update rule: w ← w − α·(ŷ−y)·x. Same elegant form as linear regression's update!"
+  },
+  {
+    section: "SECTION 05 · Logistic vs. Linear Regression",
+    q: "Which is NOT a difference between linear and logistic regression?",
+    options: [
+      "A) Linear outputs continuous values; logistic outputs probabilities in (0,1)",
+      "B) Linear uses MSE loss; logistic uses cross-entropy loss",
+      "C) Both have a linear decision boundary (a hyperplane in feature space)",
+      "D) Linear is for regression; logistic is for classification"
+    ],
+    answer: 2,
+    exp: "Option C is TRUE for BOTH — that's why it's NOT a difference. Logistic regression IS a linear classifier: its decision boundary w·x+b=0 is a hyperplane (linear in feature space). The sigmoid makes outputs non-linear, but the boundary remains linear. Options A, B, D are all genuine differences between the two methods."
+  },
+  {
+    section: null,
+    q: "Why is logistic regression called a 'linear classifier' despite using the non-linear sigmoid?",
+    options: [
+      "A) Because computation is linear time",
+      "B) Because the decision boundary w·x+b=0 is a hyperplane — linear in feature space",
+      "C) Because it only works on linearly separable data",
+      "D) Because the loss function is linear"
+    ],
+    answer: 1,
+    exp: "The 'linear' refers to the decision boundary shape. w·x+b=0 defines a hyperplane (line in 2D, plane in 3D, hyperplane in higher D). The partition of feature space is linear. The sigmoid squashes the output but doesn't curve the boundary. Compare: SVM with RBF kernel or neural networks create non-linear curved boundaries."
+  },
+  {
+    section: null,
+    q: "What fundamental assumption does logistic regression make about the data?",
+    options: [
+      "A) Features are normally distributed",
+      "B) The log-odds log(P/(1−P)) is a LINEAR function of the features",
+      "C) The outcome variable is normally distributed",
+      "D) All features must be standardized"
+    ],
+    answer: 1,
+    exp: "Logistic regression assumes: logit(P(y=1|x)) = log(P/(1−P)) = w·x+b — the log-odds is linear. Linear regression assumes E[y] = w·x+b — the expected value is linear. Both assume linearity, but about different transformations of the target. Logistic regression doesn't assume normality of y (it's Bernoulli distributed)."
+  },
+  {
+    section: null,
+    q: "Comparison table: For which scenario would you prefer logistic regression over linear regression?",
+    formula: "Task: Predict if an email is spam (Yes/No)\nFeatures: word count, sender, attachments",
+    options: [
+      "A) Linear regression, because spam detection is a continuous problem",
+      "B) Logistic regression, because the outcome is binary (spam/not spam)",
+      "C) Both are equally appropriate for this task",
+      "D) Neither — use a clustering algorithm"
+    ],
+    answer: 1,
+    exp: "Spam detection has a binary outcome (spam=1, not spam=0). Logistic regression is designed for exactly this: it outputs P(spam|features) ∈ (0,1), uses a threshold (e.g., 0.5) to classify, and is trained with cross-entropy loss optimized for probability estimation. Linear regression would predict arbitrary numbers, not valid probabilities."
+  },
+  {
+    section: "SECTION 06 · Regularization & Evaluation",
+    q: "What does L2 regularization do to logistic regression weights?",
+    formula: "Total Loss = BCE + λ · Σwᵢ²",
+    options: [
+      "A) Makes some weights exactly zero (sparse solution)",
+      "B) Shrinks weights toward zero — reduces overfitting",
+      "C) Makes the boundary non-linear",
+      "D) Automatically increases the learning rate"
+    ],
+    answer: 1,
+    exp: "L2 regularization adds penalty λ·Σwᵢ². Large weights → large penalty → model prefers small weights. This shrinks all weights toward (but not to) zero — prevents over-reliance on any single feature. In sklearn, L2 strength is controlled by C=1/λ. Smaller C = stronger regularization. L1 (Lasso) can push weights to exactly zero (feature selection)."
+  },
+  {
+    section: null,
+    q: "In sklearn's LogisticRegression(C=0.01), how does this compare to C=100?",
+    options: [
+      "A) C=0.01 → less regularization, C=100 → more regularization",
+      "B) C=0.01 → strong regularization (λ=100), C=100 → weak regularization (λ=0.01)",
+      "C) C=0.01 → faster training only",
+      "D) C controls the learning rate, not regularization"
+    ],
+    answer: 1,
+    exp: "C = 1/λ in sklearn. C=0.01 → λ=100 → STRONG regularization → heavily shrinks weights → simpler model → potential underfitting. C=100 → λ=0.01 → WEAK regularization → weights can be large → model fits data closely → potential overfitting. Default C=1. Tune C with cross-validation: lower C if overfitting, raise if underfitting."
+  },
+  {
+    section: null,
+    q: "A logistic regression model outputs ŷ=0.3. With default threshold 0.5, what is predicted?",
+    options: [
+      "A) Class 1 (positive)",
+      "B) Class 0 (negative) — since 0.3 < 0.5",
+      "C) Uncertain — cannot determine",
+      "D) A probability of 0.3 is returned as the prediction"
+    ],
+    answer: 1,
+    exp: "Rule: predict class 1 if ŷ ≥ 0.5, else class 0. Since 0.3 < 0.5 → predict Class 0. BUT the threshold is adjustable! For medical diagnosis (costly to miss disease), lower threshold to 0.2. For fraud detection (costly false alarms), raise to 0.7. The ROC curve visualizes all threshold options. Choosing threshold = choosing the precision/recall tradeoff."
+  },
+  {
+    section: "SECTION 07 · Multinomial Logistic Regression",
+    q: "What is multinomial logistic regression used for?",
+    options: [
+      "A) Binary classification only (K=2 classes)",
+      "B) Multi-class classification with K≥3 classes, outputting probabilities for each",
+      "C) Regression with continuous output",
+      "D) Clustering unlabeled data"
+    ],
+    answer: 1,
+    exp: "Multinomial (Softmax) logistic regression handles K≥3 classes. It outputs P(y=k|x) for all K classes simultaneously, summing to 1. Examples: digit recognition (10 classes), sentiment (positive/neutral/negative), species classification. It has K weight vectors w₁,...,wₖ — one per class."
+  },
+  {
+    section: null,
+    q: "What activation function does multinomial logistic regression use instead of sigmoid?",
+    formula: "Softmax: P(y=k|x) = e^(wₖ·x) / Σⱼ e^(wⱼ·x)",
+    options: [
+      "A) ReLU — max(0, z)",
+      "B) Tanh — hyperbolic tangent",
+      "C) Softmax — normalizes K logits into probabilities summing to 1",
+      "D) K independent sigmoids applied to each class"
+    ],
+    answer: 2,
+    exp: "Softmax: P(y=k) = e^{zₖ}/Σⱼe^{zⱼ} where zₖ=wₖ·x+bₖ. Properties: (1) each output ∈ (0,1), (2) all K outputs sum to exactly 1 — a proper probability distribution. Fun fact: for K=2, softmax reduces to binary sigmoid! The class with the highest zₖ gets the highest probability."
+  },
+  {
+    section: null,
+    q: "A 3-class model outputs z=[2, 1, 0]. Calculate softmax probabilities. (e²≈7.39, e¹≈2.72, e⁰=1)",
+    formula: "Denominator = e² + e¹ + e⁰ = 7.39 + 2.72 + 1.00 = 11.11\nP(k) = e^(zₖ) / 11.11",
+    options: [
+      "A) P = [0.67, 0.24, 0.09]",
+      "B) P = [0.50, 0.33, 0.17]",
+      "C) P = [0.60, 0.30, 0.10]",
+      "D) P = [0.40, 0.35, 0.25]"
+    ],
+    answer: 0,
+    exp: "P(0)=7.39/11.11≈0.665, P(1)=2.72/11.11≈0.245, P(2)=1.00/11.11≈0.090. Sum=0.665+0.245+0.090=1.0 ✓. Model predicts class 0 (67% confidence). Key insight: softmax amplifies differences — class 0 has z only 2 units above class 2, but gets 7.4× more probability. This 'winner-takes-more' property helps in classification."
+  },
+  {
+    section: null,
+    q: "What loss function is used for multinomial logistic regression?",
+    formula: "L = −Σₖ yₖ · log(P(y=k|x))\nwhere yₖ is one-hot encoded label",
+    options: [
+      "A) Binary Cross-Entropy (BCE)",
+      "B) Categorical Cross-Entropy (CCE)",
+      "C) Mean Squared Error (MSE)",
+      "D) Hinge Loss"
+    ],
+    answer: 1,
+    exp: "Categorical Cross-Entropy: L = −Σₖ yₖ·log(ŷₖ). With one-hot encoding, only the true class k* contributes: L = −log(ŷ_{k*}). If the model assigns high probability to the correct class, loss is small. This is the natural generalization of binary cross-entropy to K classes, and is derived from maximum likelihood estimation of the softmax distribution."
+  },
+  {
+    section: "SECTION 08 · One-vs-Rest (OvR)",
+    q: "What is the One-vs-Rest (OvR) strategy?",
+    options: [
+      "A) Train one model on all classes at once",
+      "B) Train K binary classifiers: each learns 'class k vs. ALL other classes'",
+      "C) Train K(K−1)/2 classifiers for each pair",
+      "D) Use k-means to separate classes first"
+    ],
+    answer: 1,
+    exp: "OvR (One-vs-All): For K classes, train K binary classifiers. Classifier k learns 'is this sample class k?' treating all other classes as negative. Prediction: run all K classifiers, pick the class with highest probability/confidence. For 4-class problem: train 4 classifiers — A vs {B,C,D}, B vs {A,C,D}, C vs {A,B,D}, D vs {A,B,C}."
+  },
+  {
+    section: null,
+    q: "How many classifiers does OvR need for a K=5 class problem?",
+    options: [
+      "A) 3",
+      "B) 5",
+      "C) 10",
+      "D) 25"
+    ],
+    answer: 1,
+    exp: "OvR always requires exactly K classifiers for K classes. For 5 classes: 5 classifiers. Each sees all N training samples (just with relabeled classes). Compare OvO: needs K(K−1)/2 = 10 classifiers. OvR is linear in K — scales well to many classes. Multinomial needs just 1 model."
+  },
+  {
+    section: null,
+    q: "In OvR for {cat, dog, bird}, three classifiers output: P(cat)=0.7, P(dog)=0.6, P(bird)=0.2. What class is predicted? Note: 0.7+0.6+0.2 = 1.5 ≠ 1.0",
+    options: [
+      "A) Cat — highest confidence wins",
+      "B) Dog — second classifier has P>0.5 too",
+      "C) Cannot determine — probabilities don't sum to 1, so invalid",
+      "D) Average them: predict cat with P=0.5"
+    ],
+    answer: 0,
+    exp: "In OvR, predict the class with the highest classifier output. Cat (0.7) > Dog (0.6) > Bird (0.2) → predict Cat. The probabilities NOT summing to 1 is expected and normal for OvR — three independent binary classifiers each output their own probability. To get proper probabilities summing to 1, you can normalize by the sum or use Platt scaling."
+  },
+  {
+    section: null,
+    q: "What is a potential problem with OvR when classes are imbalanced (K=10 classes)?",
+    options: [
+      "A) OvR cannot work with more than 3 classes",
+      "B) Each binary classifier faces ~1:9 class imbalance (1 positive class vs 9 others), biasing predictions toward 'not this class'",
+      "C) OvR always produces probabilities summing to 1",
+      "D) OvR requires all features to be binary"
+    ],
+    answer: 1,
+    exp: "For K=10 with balanced data: each OvR classifier has ~10% positives and ~90% negatives. A trivial classifier predicting 'negative' every time gets 90% accuracy! The classifiers are heavily biased toward predicting 'not this class.' Mitigations: class_weight='balanced' in sklearn, oversampling (SMOTE), or switching to multinomial softmax which jointly optimizes all classes."
+  },
+  {
+    section: "SECTION 09 · One-vs-One (OvO)",
+    q: "What is the One-vs-One (OvO) strategy?",
+    options: [
+      "A) K classifiers, each class against all others",
+      "B) K(K−1)/2 classifiers, one for every pair of classes",
+      "C) A single multinomial classifier",
+      "D) One classifier per feature"
+    ],
+    answer: 1,
+    exp: "OvO trains a binary classifier for every pair of classes. For K classes: K(K−1)/2 classifiers. For 4 classes (A,B,C,D): 6 classifiers — (A,B), (A,C), (A,D), (B,C), (B,D), (C,D). Each classifier only trains on data from its 2 classes (smaller, balanced datasets). Prediction: majority voting across all classifiers."
+  },
+  {
+    section: null,
+    q: "How many OvO classifiers are needed for K=6 classes?",
+    formula: "OvO count = K(K−1)/2",
+    options: [
+      "A) 6",
+      "B) 12",
+      "C) 15",
+      "D) 36"
+    ],
+    answer: 2,
+    exp: "K(K−1)/2 = 6×5/2 = 15 classifiers. The pairs are: (1,2),(1,3),(1,4),(1,5),(1,6),(2,3),(2,4),(2,5),(2,6),(3,4),(3,5),(3,6),(4,5),(4,6),(5,6) = 15 pairs. Compare OvR: needs only 6 classifiers. For large K (e.g., K=100): OvO=4950 classifiers vs OvR=100. OvO scales quadratically!"
+  },
+  {
+    section: null,
+    q: "What is the KEY advantage of OvO over OvR for some algorithms?",
+    options: [
+      "A) OvO always produces probabilities summing to 1",
+      "B) OvO requires fewer total classifiers",
+      "C) Each OvO classifier trains on only 2 balanced classes — no class imbalance problem",
+      "D) OvO always trains faster"
+    ],
+    answer: 2,
+    exp: "Each OvO classifier sees only 2 classes — perfectly balanced (50/50) or near-balanced training data. Compare OvR's 1:(K−1) imbalance. This makes OvO particularly good for algorithms like SVMs that are sensitive to imbalance. Tradeoff: more classifiers (quadratic vs linear in K). sklearn's SVC uses OvO by default."
+  },
+  {
+    section: null,
+    q: "In OvO voting with 3 classes {A,B,C}: results are A>B, C>A, B>C (Condorcet paradox). What happens?",
+    options: [
+      "A) Always predict class A",
+      "B) A=1 vote, B=1 vote, C=1 vote — a tie, resolved by confidence scores or decision function values",
+      "C) The system outputs all three classes",
+      "D) OvO fails and returns an error"
+    ],
+    answer: 1,
+    exp: "A beats B (+1 for A), C beats A (+1 for C), B beats C (+1 for B). Tally: A=1, B=1, C=1 — three-way tie! This Condorcet paradox is a known weakness of OvO majority voting. Resolution: use the accumulated decision function values (margins) rather than just wins. sklearn's OvO uses confidence-weighted voting to handle ties."
+  },
+  {
+    section: "SECTION 10 · OvR vs OvO vs Multinomial",
+    q: "For K=1000 classes, which approach is most computationally efficient?",
+    formula: "OvR: K classifiers\nOvO: K(K-1)/2 classifiers\nMultinomial: 1 model with K weight vectors",
+    options: [
+      "A) OvO — better balanced data per classifier",
+      "B) Multinomial softmax — one unified model, scales linearly with K",
+      "C) OvR — fewer classifiers than OvO",
+      "D) All three are equally efficient for large K"
+    ],
+    answer: 1,
+    exp: "K=1000: OvO needs 1000×999/2 = 499,500 classifiers — infeasible! OvR needs 1000 classifiers — manageable but lots of training. Multinomial (softmax) needs ONE model with K weight vectors — most efficient. For large K problems (ImageNet 1000 classes, NLP with large vocabularies), softmax regression or neural networks with softmax output are standard."
+  },
+  {
+    section: null,
+    q: "Which sklearn solver supports multinomial (softmax) logistic regression?",
+    options: [
+      "A) solver='liblinear' — the only solver that supports multinomial",
+      "B) solver='lbfgs' or 'saga' — liblinear does NOT support multinomial",
+      "C) All solvers support multinomial equally",
+      "D) Multinomial requires setting C=0"
+    ],
+    answer: 1,
+    exp: "In sklearn LogisticRegression: multi_class='multinomial' requires solvers: 'lbfgs' (default, good for small/medium data), 'saga' (for large datasets), 'newton-cg', 'sag'. 'liblinear' only supports OvR. 'lbfgs' uses Limited-memory BFGS — a quasi-Newton method. Much faster convergence than plain gradient descent. For most cases: LogisticRegression(multi_class='multinomial', solver='lbfgs')."
+  },
+  {
+    section: "SECTION 11 · Advanced & Tricky",
+    q: "What happens to logistic regression training when classes are PERFECTLY linearly separable (without regularization)?",
+    hint: "What does gradient descent keep doing to the weights?",
+    formula: null,
+    options: [
+      "A) Converges quickly to a perfect classifier",
+      "B) Weights grow toward ±∞ (never converge) — the model keeps widening the margin",
+      "C) The sigmoid becomes linear automatically",
+      "D) The loss suddenly drops to zero and training stops"
+    ],
+    answer: 1,
+    exp: "With perfect separation and no regularization: at the correct boundary, loss = 0. But gradient descent keeps increasing |w| to push sigmoid outputs closer to 0 or 1 (increasing confidence). Weights diverge to ±∞. Training never converges. Regularization fixes this by penalizing large weights, finding a maximum-margin solution. This is related to why SVM explicitly maximizes margin."
+  },
+  {
+    section: null,
+    q: "How do you add non-linear decision boundaries to logistic regression?",
+    options: [
+      "A) Set non_linear=True in sklearn",
+      "B) Manually add polynomial/interaction features (x₁², x₂², x₁x₂) then apply logistic regression",
+      "C) Use more training data",
+      "D) Logistic regression automatically learns non-linear boundaries"
+    ],
+    answer: 1,
+    exp: "Logistic regression is inherently linear. For non-linear boundaries, engineer features: add x₁², x₂², x₁x₂, sin(x₁), etc. With quadratic features in original space, the boundary is a circle/ellipse/parabola. Example: from sklearn.preprocessing import PolynomialFeatures. Alternatively, use kernelized methods or neural networks that automatically learn non-linear features."
+  },
+  {
+    section: null,
+    q: "What does coefficient w₁ = 0.5 mean in a logistic regression model for predicting disease?",
+    formula: "logit(P) = w₀ + 0.5·x₁ + ...\nOdds Ratio = e^(w₁) = e^0.5 ≈ 1.65",
+    options: [
+      "A) P(disease) increases by 0.5 per unit increase in x₁",
+      "B) The odds of disease multiply by e^0.5 ≈ 1.65 per unit increase in x₁ (65% increase in odds)",
+      "C) The probability increases by 50% per unit increase in x₁",
+      "D) x₁ and disease have 50% correlation"
+    ],
+    answer: 1,
+    exp: "Coefficient interpretation: for a 1-unit increase in x₁, the log-odds increases by w₁=0.5. Equivalently, the ODDS multiply by e^{0.5}≈1.65 — a 65% increase in odds. This is the odds ratio. Note: this is NOT the same as probability change (which depends on base rate). For negative w₁=−0.5: odds multiply by e^{−0.5}≈0.607 (39% decrease in odds)."
+  },
+  {
+    section: null,
+    q: "What is the cross-entropy loss when the model makes a HIGHLY confident WRONG prediction (ŷ→0 when y=1)?",
+    formula: "L = −log(ŷ) when y=1\nAs ŷ → 0: −log(ŷ) → ?",
+    options: [
+      "A) Loss → 1.0",
+      "B) Loss → +∞",
+      "C) Loss → 0.5",
+      "D) Loss → −∞"
+    ],
+    answer: 1,
+    exp: "L = −log(ŷ). As ŷ→0 (model extremely confident about wrong class): −log(0)→+∞. Infinite penalty! This is the key property of cross-entropy: infinitely confident wrong answers receive infinite punishment. Gradients are enormous, creating very strong correction signals. This is why cross-entropy drives better training than MSE (where wrong confident predictions just get squared, not log-penalized)."
+  },
+  {
+    section: null,
+    q: "Logistic regression is mathematically equivalent to which neural network architecture?",
+    options: [
+      "A) Multi-layer perceptron with ReLU activation",
+      "B) Single neuron with sigmoid activation and binary cross-entropy loss",
+      "C) Convolutional neural network with global average pooling",
+      "D) Recurrent neural network with LSTM cells"
+    ],
+    answer: 1,
+    exp: "A single artificial neuron: z=w·x+b (linear combination) → σ(z) (sigmoid activation) → binary cross-entropy loss = EXACTLY logistic regression. A multi-layer network is like applying logistic regression to automatically learned non-linear features. This is why logistic regression is often called the 'building block of neural networks' and is taught before deep learning."
+  },
+  {
+    section: null,
+    q: "Why is feature scaling (standardization) important for logistic regression with gradient descent?",
+    options: [
+      "A) The sigmoid function only works with standardized features",
+      "B) Different feature scales create an elongated loss landscape — gradient descent zigzags and converges slowly; regularization also unfairly penalizes large-scale features",
+      "C) Standardization forces probabilities to sum to 1",
+      "D) sklearn requires standardized features to compute logistic regression"
+    ],
+    answer: 1,
+    exp: "Two reasons: (1) Convergence — with features on different scales (income $100K vs age 0-100), the loss landscape is elongated. Gradients point in awkward directions, causing slow zigzag convergence. Standardization makes the landscape spherical, allowing gradient descent to take direct steps. (2) Regularization fairness — L2 penalizes large weights; a feature with scale 10000 needs small weights that look 'better' under regularization. Standardize first!"
+  }
+];
+
+let answered = 0;
+let correct = 0;
+const userAnswers = {};
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+  let currentSection = null;
+
+  questions.forEach((q, i) => {
+    if (q.section && q.section !== currentSection) {
+      currentSection = q.section;
+      const sl = document.createElement('div');
+      sl.className = 'section-label';
+      sl.innerHTML = `<div class="dot"></div><span>${q.section}</span><div class="line"></div>`;
+      container.appendChild(sl);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `card-${i}`;
+    card.style.animationDelay = `${i * 0.025}s`;
+
+    const formulaHtml = q.formula
+      ? `<div class="formula">${q.formula}</div>` : '';
+    const hintHtml = q.hint
+      ? `<div class="hint">${q.hint}</div>` : '';
+
+    const optionsHtml = q.options.map((opt, j) => {
+      return `<button class="option-btn" id="opt-${i}-${j}" onclick="selectAnswer(${i}, ${j})">
+        <span>${opt}</span>
+      </button>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-num">Q${String(i+1).padStart(2,'0')}</span>
+        <span class="q-text">${q.q}</span>
+      </div>
+      ${formulaHtml}
+      ${hintHtml}
+      <div class="options">${optionsHtml}</div>
+      <div class="explanation" id="exp-${i}">
+        <div class="exp-title">Explanation</div>
+        <div id="exp-text-${i}"></div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectAnswer(qIdx, optIdx) {
+  if (userAnswers[qIdx] !== undefined) return;
+  userAnswers[qIdx] = optIdx;
+  answered++;
+
+  const q = questions[qIdx];
+  const isCorrect = optIdx === q.answer;
+  if (isCorrect) correct++;
+
+  const card = document.getElementById(`card-${qIdx}`);
+  card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
+
+  q.options.forEach((opt, j) => {
+    const btn = document.getElementById(`opt-${qIdx}-${j}`);
+    btn.disabled = true;
+    if (j === q.answer) {
+      btn.classList.add('correct');
+      btn.innerHTML = `<span>${opt}</span><span class="result-icon">✓</span>`;
+    } else if (j === optIdx && !isCorrect) {
+      btn.classList.add('wrong');
+      btn.innerHTML = `<span>${opt}</span><span class="result-icon">✗</span>`;
+    }
+  });
+
+  const expDiv = document.getElementById(`exp-${qIdx}`);
+  document.getElementById(`exp-text-${qIdx}`).textContent = q.exp;
+  expDiv.classList.add('show');
+
+  updateProgress();
+  if (answered === questions.length) setTimeout(showResults, 800);
+}
+
+function updateProgress() {
+  const pct = (answered / questions.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${answered} / ${questions.length}`;
+  document.getElementById('scoreBadge').textContent = `Score: ${correct}`;
+}
+
+function showResults() {
+  const pct = Math.round((correct / questions.length) * 100);
+  let grade, msg, color;
+  if (pct >= 90) { grade = '🏆 Outstanding!'; msg = 'Exceptional mastery of logistic regression. Ready for advanced ML!'; color = 'var(--accent3)'; }
+  else if (pct >= 75) { grade = '🥈 Great Job!'; msg = 'Strong grasp of concepts. Review the sections you missed.'; color = 'var(--accent)'; }
+  else if (pct >= 60) { grade = '🎯 Good Effort!'; msg = 'Solid foundation. Revisit calculations and multinomial methods.'; color = 'var(--warn)'; }
+  else { grade = '📚 Keep Studying!'; msg = 'Review sigmoid, loss functions, and the OvR/OvO strategies.'; color = 'var(--danger)'; }
+
+  const res = document.getElementById('finalResults');
+  res.innerHTML = `
+    <h2>Quiz Complete!</h2>
+    <div class="score-circle" style="border-color:${color};box-shadow:0 0 30px ${color}33">
+      <div class="big-num" style="color:${color}">${pct}%</div>
+      <div class="sub">${correct}/${questions.length}</div>
+    </div>
+    <div class="grade-text" style="color:${color}">${grade}</div>
+    <div class="grade-msg">${msg}</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="s-val" style="color:var(--correct)">${correct}</div><div class="s-lab">Correct</div></div>
+      <div class="stat-box"><div class="s-val" style="color:var(--wrong)">${questions.length-correct}</div><div class="s-lab">Wrong</div></div>
+      <div class="stat-box"><div class="s-val" style="color:var(--accent)">${pct}%</div><div class="s-lab">Score</div></div>
+    </div>
+    <button class="reset-btn" onclick="resetQuiz()">↺ Retake Quiz</button>
+  `;
+  res.classList.add('show');
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetQuiz() {
+  Object.keys(userAnswers).forEach(k => delete userAnswers[k]);
+  answered = 0; correct = 0;
+  document.getElementById('finalResults').classList.remove('show');
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressText').textContent = `0 / ${questions.length}`;
+  document.getElementById('scoreBadge').textContent = 'Score: 0';
+  buildQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+document.getElementById('progressText').textContent = `0 / ${questions.length}`;
+</script>
+</body>
+</html>
