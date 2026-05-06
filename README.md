@@ -21,7 +21,7 @@
 | **Organization** | NetSol Technologies |
 | **Supported By** | NAVTTC (National Vocational & Technical Training Commission) |
 | **Format** | Instructor-led + Hands-on Practice |
-| **Duration** | 6 Months Intensive BootCamp |
+| **Duration** | 3 Months Intensive BootCamp |
 
 ---
 
@@ -113,4 +113,4 @@ AI-ML-BootCamp/
 
 ⭐ **If you found this helpful, please give it a star!**
 
-*Trained at NetSol Technologies, Islamabad 🇵🇰*
+*Trained at NetSol Technologies, Lahore 🇵🇰*
