@@ -1,97 +1,116 @@
-# AI-ML BootCamp
-# 🚀 AI/ML Learning Journey – NetSol x NAVTTC  
+# 🚀 AI/ML BootCamp — NetSol Technologies x NAVTTC
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)  
-![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Beginner%20to%20Intermediate-green)  
-![Status](https://img.shields.io/badge/Status-Active-orange)  
-![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)  
+![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat&logo=python)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange?style=flat&logo=jupyter)
+![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-ML-orange?style=flat)
+![Status](https://img.shields.io/badge/Status-Active-green?style=flat)
+![Commits](https://img.shields.io/badge/Commits-134-brightgreen?style=flat)
 
----
-
-## 👋 About This Repository  
-
-This repository showcases my journey into **Artificial Intelligence and Machine Learning**, built during my training at **NetSol Technologies** with support from **NAVTTC**.  
-
-It includes structured coursework, instructor-led assignments, and independent practice as I continue to develop my skills.
+> 🎓 Structured AI/ML training repository from **NetSol Technologies**
+> in collaboration with **NAVTTC** — covering Python, Machine Learning,
+> Deep Learning, and real-world AI applications through hands-on
+> coursework and instructor-led assignments.
 
 ---
 
-## 🎓 Training Details  
+## 🎓 Training Details
 
-- **Program:** Artificial Intelligence / Machine Learning  
-- **Organization:** NetSol Technologies  
-- **Supported By:** NAVTTC  
+| | |
+|--|--|
+| **Program** | Artificial Intelligence & Machine Learning |
+| **Organization** | NetSol Technologies |
+| **Supported By** | NAVTTC (National Vocational & Technical Training Commission) |
+| **Format** | Instructor-led + Hands-on Practice |
+| **Duration** | 6 Months Intensive BootCamp |
 
 ---
 
-## 🧠 Skills & Learning Areas  
-
-- 🐍 Python for AI/ML  
-- 📊 Data Analysis & Visualization  
-- 🤖 Machine Learning Fundamentals  
-- 🧩 Practical problem-solving  
-
-
-## 📂 Repository Structure  
+## 📂 Repository Structure
 
 ```
-AI-ML BootCamp/
+AI-ML-BootCamp/
 │
-├── NAVTTC/
-│   └── Official coursework and structured tasks
+├── NETSOL WORK/
+│   ├── week_7/
+│   │   └── Week_7 ML_Flow/      # MLflow experiment tracking
+│   └── ...                      # Weekly instructor assignments
 │
-├── NetSol/
-│   └── Instructor assignments and class exercises
+├── Netsol AIML Course March 26/ # Course materials & notebooks
 │
-├── Random_Practices/
-│   └── Personal experiments and mini projects
+├── NETSOL_AI_ML Course.pdf      # Official course curriculum
 │
 └── README.md
 ```
 
-## 🎯 Objectives  
+---
 
-- Track my progress throughout the training  
-- Keep all work organized in one place  
-- Strengthen concepts through hands-on practice  
-- Build a solid AI/ML portfolio  
+## 🧠 Skills & Topics Covered
+
+### 🐍 Python Foundations
+- Data structures, OOP, file handling
+- NumPy, Pandas for data manipulation
+- Matplotlib, Seaborn for visualization
+
+### 📊 Data Analysis & EDA
+- Exploratory Data Analysis techniques
+- Feature engineering & preprocessing
+- Handling missing data & outliers
+
+### 🤖 Machine Learning
+- Supervised & Unsupervised Learning
+- Classification & Regression algorithms
+- Model evaluation & hyperparameter tuning
+
+### 🔬 Advanced Topics
+- MLflow for experiment tracking (Week 7)
+- Deep Learning fundamentals
+- Real-world AI use cases
 
 ---
 
-## 🛠 Tech Stack  
+## 🛠️ Tech Stack
 
-- Python  
-- Jupyter Notebook  
-- NumPy  
-- Pandas  
-- Matplotlib  
-- Scikit-learn  
-
----
-
-## 📈 Current Status  
-
-- Actively learning and building  
-- Continuously updating the repository  
-- Exploring new concepts and tools  
+| Category | Tools |
+|----------|-------|
+| Language | Python 3.x |
+| Notebooks | Jupyter Notebook |
+| Data | Pandas, NumPy |
+| Visualization | Matplotlib, Seaborn |
+| ML | Scikit-learn |
+| Experiment Tracking | MLflow |
 
 ---
 
-## 🔮 Future Plans  
+## 📈 Progress
 
-- Build machine learning projects  
-- Work with real-world datasets  
-- Explore advanced AI concepts  
-- Create end-to-end applications  
-
----
-
-## 🤝 Contributions  
-
-This is a personal learning repository, but feedback and suggestions are always welcome.  
+- ✅ Python & Data Foundations
+- ✅ EDA & Feature Engineering
+- ✅ Machine Learning Algorithms
+- ✅ MLflow Experiment Tracking
+- 🔄 Deep Learning (In Progress)
+- 🔄 Advanced AI Applications
 
 ---
 
-## ⭐ Final Note  
+## 🎯 Key Learnings
 
-This repository reflects my learning journey, consistency, and growth in AI and Machine Learning.  
+- Real-world data is messy — preprocessing is crucial
+- MLflow makes experiment tracking professional & reproducible
+- Feature engineering often matters more than model choice
+- Hands-on practice with industry-level workflows at NetSol
+
+---
+
+## 👨‍💻 Author
+
+**Tashfeen Aziz** — AI/ML Engineer & Python Developer
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?logo=linkedin)](https://linkedin.com/in/tashfeen-aziz-b51361292)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?logo=github)](https://github.com/tashfeen786)
+[![Email](https://img.shields.io/badge/Email-Contact-red?logo=gmail)](mailto:tashfeen247@gmail.com)
+
+---
+
+⭐ **If you found this helpful, please give it a star!**
+
+*Trained at NetSol Technologies, Islamabad 🇵🇰*
