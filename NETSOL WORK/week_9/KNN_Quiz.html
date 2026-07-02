@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KNN — Challenge Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0c10;
+    --surface:  #111318;
+    --card:     #161b24;
+    --border:   #1f2733;
+    --accent:   #4f9cf9;
+    --accent2:  #7c5cbf;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --yellow:   #f59e0b;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --mono:     'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── grid noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(79,156,249,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,156,249,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  header { text-align: center; padding: 60px 0 50px; }
+  header .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 22px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 6vw, 62px); font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #e2e8f0 30%, #4f9cf9 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  header p {
+    color: var(--muted); font-size: 15px; max-width: 500px; margin: 0 auto 30px;
+  }
+  .meta-bar {
+    display: flex; justify-content: center; gap: 28px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .meta-bar span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-blue   { background: var(--accent); }
+  .dot-purple { background: var(--accent2); }
+  .dot-yellow { background: var(--yellow); }
+
+  /* ── PROGRESS ── */
+  #progress-bar-wrap {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,12,16,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+  }
+  #progress-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  #progress-track {
+    flex: 1; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 4px; transition: width 0.4s ease;
+  }
+  #progress-label { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ── SECTION DIVIDER ── */
+  .section-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent2);
+    margin: 48px 0 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 30px 24px;
+    margin-bottom: 18px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--accent2), var(--accent));
+    opacity: 0; transition: opacity 0.25s;
+  }
+  .q-card:hover { border-color: #2a3547; box-shadow: 0 4px 32px rgba(0,0,0,0.4); }
+  .q-card.answered::before { opacity: 1; }
+
+  .q-number {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 1px; margin-bottom: 10px;
+  }
+  .q-text {
+    font-size: 15.5px; font-weight: 500; color: var(--text);
+    margin-bottom: 20px; line-height: 1.65;
+  }
+  .q-text code {
+    font-family: var(--mono); font-size: 13px;
+    background: #1e2633; padding: 2px 7px; border-radius: 5px;
+    color: #93c5fd;
+  }
+
+  /* math formula blocks */
+  .formula {
+    font-family: var(--mono); font-size: 13px;
+    background: #1a2236; border: 1px solid #263348;
+    padding: 10px 16px; border-radius: 8px;
+    margin: 10px 0 16px; color: #93c5fd;
+    display: inline-block;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 15px; border-radius: 9px;
+    border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.18s;
+    font-size: 14.5px; line-height: 1.5;
+    background: rgba(255,255,255,0.02);
+    user-select: none;
+  }
+  .opt:hover { border-color: var(--accent); background: rgba(79,156,249,0.06); }
+  .opt-key {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--muted); background: var(--border);
+    width: 22px; height: 22px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px; transition: all 0.18s;
+  }
+
+  /* states after answering */
+  .opt.correct  { border-color: var(--green); background: rgba(34,197,94,0.08); }
+  .opt.wrong    { border-color: var(--red);   background: rgba(239,68,68,0.08); }
+  .opt.correct .opt-key { background: var(--green); color: #fff; }
+  .opt.wrong   .opt-key { background: var(--red);   color: #fff; }
+  .opt.correct .opt-text { color: var(--green); font-weight: 500; }
+  .opt.wrong   .opt-text { color: var(--red); }
+  .opt.disabled { cursor: not-allowed; pointer-events: none; opacity: 0.55; }
+  .opt.disabled.correct { opacity: 1; }
+
+  /* ── EXPLANATION ── */
+  .explanation {
+    display: none;
+    margin-top: 16px; padding: 14px 16px;
+    background: rgba(79,156,249,0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px; color: #a0b4cc; line-height: 1.7;
+  }
+  .explanation.show { display: block; animation: fadeSlide 0.3s ease; }
+  .explanation strong { color: var(--text); }
+  .explanation code {
+    font-family: var(--mono); font-size: 12px;
+    background: #1e2633; padding: 1px 6px; border-radius: 4px; color: #93c5fd;
+  }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SUBMIT BUTTON ── */
+  #submit-btn {
+    display: block; width: 100%; margin: 40px auto 0;
+    padding: 18px 0; font-size: 16px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none; border-radius: 12px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 0 30px rgba(79,156,249,0.2);
+  }
+  #submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+  #submit-btn:active { transform: translateY(0); }
+
+  /* ── RESULTS PANEL ── */
+  #results {
+    display: none;
+    margin-top: 50px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  #results.show { display: block; animation: fadeSlide 0.5s ease; }
+
+  .results-header {
+    background: linear-gradient(135deg, #0d1522, #111b2d);
+    padding: 48px 40px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-ring {
+    width: 140px; height: 140px; border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+  }
+  .score-ring svg {
+    position: absolute; top: 0; left: 0; transform: rotate(-90deg);
+  }
+  .score-ring-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 900; line-height: 1;
+    position: relative; z-index: 1;
+  }
+  .score-ring-label {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--muted); letter-spacing: 2px; position: relative; z-index: 1;
+  }
+  .results-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; margin-bottom: 8px;
+  }
+  .results-sub { color: var(--muted); font-size: 14px; }
+
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    padding: 24px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px; font-weight: 700; display: block;
+  }
+  .stat-name { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+  .review-section { padding: 30px 32px; }
+  .review-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; margin-bottom: 18px; color: var(--text);
+  }
+
+  .review-item {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border); font-size: 13.5px;
+    align-items: flex-start;
+  }
+  .review-item:last-child { border-bottom: none; }
+  .ri-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+  .ri-q    { color: var(--muted); }
+  .ri-ans  { margin-top: 3px; }
+  .ri-correct { color: var(--green); }
+  .ri-wrong   { color: var(--red); }
+
+  #retry-btn {
+    display: block; width: 200px; margin: 28px auto 0;
+    padding: 14px 0; font-size: 14px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--accent); background: transparent;
+    border: 1px solid var(--accent); border-radius: 10px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  #retry-btn:hover { background: rgba(79,156,249,0.1); }
+
+  /* badges */
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 20px; margin-left: 8px;
+    vertical-align: middle;
+  }
+  .badge-calc { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-hard { background: rgba(239,68,68,0.15);  color: var(--red);    border: 1px solid rgba(239,68,68,0.3); }
+  .badge-concept { background: rgba(79,156,249,0.15); color: var(--accent); border: 1px solid rgba(79,156,249,0.3); }
+
+  @media (max-width: 600px) {
+    .q-card { padding: 22px 18px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-cell { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar-wrap">
+  <div id="progress-inner">
+    <span id="progress-label" style="font-family:var(--mono);font-size:11px;color:var(--muted)">0 / 32 answered</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span id="progress-pct" style="font-family:var(--mono);font-size:11px;color:var(--muted)">0%</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="tag">Machine Learning · KNN</div>
+    <h1>Challenge Quiz</h1>
+    <p>32 questions drawn directly from the lecture. Calculations, edge cases, and conceptual traps included.</p>
+    <div class="meta-bar">
+      <span><span class="dot dot-blue"></span>32 Questions</span>
+      <span><span class="dot dot-purple"></span>Distance Calculations</span>
+      <span><span class="dot dot-yellow"></span>Concept + Intuition</span>
+    </div>
+  </header>
+
+  <div id="quiz-body"></div>
+
+  <button id="submit-btn">Submit &amp; See Results</button>
+  <div id="results"></div>
+</div>
+
+<script>
+const Q = [
+  // ── SECTION 1: The Algorithm ────────────────────────────────────────────────
+  {
+    section: "The Algorithm",
+    text: "KNN is called a <strong>'lazy learner'</strong>. What does this mean precisely?",
+    badge: "concept",
+    opts: [
+      "It uses simple arithmetic instead of calculus",
+      "It performs no computation during training — all work happens at prediction time",
+      "It only looks at a small subset of training data",
+      "It converges slowly during gradient descent"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> Lazy learning means the model does <strong>zero computation at training time</strong> — it just memorises the data. The entire computational cost is deferred to prediction time, where it must search all stored points. This contrasts with 'eager learners' like Decision Trees, which build a compact model during training and predict in microseconds."
+  },
+  {
+    section: "The Algorithm",
+    text: "You have a binary classification task. Training set has 1000 points. If you set K = 1000, what does KNN always predict?",
+    badge: "concept",
+    opts: [
+      "It predicts the class of the single most similar point",
+      "It predicts a random class with equal probability",
+      "It always predicts the majority class of the entire training set, regardless of the input",
+      "It raises an error because K cannot exceed training set size"
+    ],
+    ans: 2,
+    exp: "<strong>Correct.</strong> When K equals the total training set size, <em>every single prediction</em> becomes a majority vote over all training points — completely ignoring where the new input is located. The result is always the dominant class. This is the most extreme form of <strong>underfitting</strong> in KNN."
+  },
+  {
+    section: "The Algorithm",
+    text: "Which of the following is NOT a property of KNN?",
+    badge: "concept",
+    opts: [
+      "Non-parametric",
+      "Instance-based",
+      "Lazy learner",
+      "Parametric — it learns a fixed set of weights during training"
+    ],
+    ans: 3,
+    exp: "<strong>Correct.</strong> KNN is explicitly <em>non-parametric</em> — it learns no weights, coefficients, or parameters during training. The other three options are genuine KNN properties. Parametric models (like linear regression) summarise training data into fixed parameters and discard the original data; KNN keeps everything."
+  },
+  {
+    section: "The Algorithm",
+    text: "For a regression task with K=4, the four nearest neighbours have target values: 10, 14, 8, 18. What does KNN predict?",
+    badge: "calc",
+    opts: [
+      "14 (the median)",
+      "12.5 (the mean)",
+      "18 (the maximum)",
+      "10 (the minimum)"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> KNN regression predicts the <strong>arithmetic mean</strong> of K neighbours' values: (10 + 14 + 8 + 18) / 4 = 50 / 4 = <strong>12.5</strong>. Unlike classification which uses majority vote, regression always averages. The median (14) and extremes are not used in standard KNN regression."
+  },
+
+  // ── SECTION 2: Distance Calculations ───────────────────────────────────────
+  {
+    section: "Distance Calculations",
+    text: "Calculate the <strong>Euclidean distance</strong> between points A = (1, 2) and B = (4, 6).",
+    badge: "calc",
+    opts: [
+      "5",
+      "7",
+      "√25 = 5 exactly",
+      "√41 ≈ 6.40"
+    ],
+    ans: 0,
+    exp: "<strong>Correct — 5.</strong> Euclidean distance = √[(4−1)² + (6−2)²] = √[9 + 16] = √25 = <strong>5</strong>. This is a classic 3-4-5 right triangle. Both options A and C express the same value; A is the clean final answer."
+  },
+  {
+    section: "Distance Calculations",
+    text: "Calculate the <strong>Manhattan distance</strong> between A = (1, 2) and B = (4, 6).",
+    badge: "calc",
+    opts: [
+      "5",
+      "7",
+      "√41",
+      "4"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — 7.</strong> Manhattan distance = |4−1| + |6−2| = 3 + 4 = <strong>7</strong>. Compare this with Euclidean = 5. Manhattan is always ≥ Euclidean in 2D because the diagonal shortcut is not permitted — you must travel along the axes like a taxi on a grid."
+  },
+  {
+    section: "Distance Calculations",
+    text: "Point A = (0, 0) and Point B = (3, 4). Which statement about their distances is TRUE?",
+    badge: "calc",
+    opts: [
+      "Euclidean > Manhattan for this pair",
+      "Manhattan (7) > Euclidean (5)",
+      "Both distances are equal at 5",
+      "Chebyshev distance equals Euclidean for this pair"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> Euclidean = √(9+16) = 5. Manhattan = 3+4 = 7. Chebyshev = max(3,4) = 4. So Manhattan (7) > Euclidean (5) > Chebyshev (4). Manhattan is always ≥ Euclidean (triangle inequality), and Chebyshev is always ≤ Euclidean."
+  },
+  {
+    section: "Distance Calculations",
+    text: "Using K=3 and Euclidean distance, a new point P = (0,0). Training points and labels: A=(1,0) Class+, B=(0,1) Class+, C=(2,0) Class−, D=(0,2) Class−, E=(1,1) Class−. What is predicted?",
+    badge: "calc",
+    opts: [
+      "Class + (2 votes vs 1)",
+      "Class − (2 votes vs 1)",
+      "Class − (3 votes vs 0)",
+      "Tie — cannot determine"
+    ],
+    ans: 0,
+    exp: "<strong>Correct — Class +.</strong> Distances from P=(0,0): A=(1,0)→1.0, B=(0,1)→1.0, C=(2,0)→2.0, D=(0,2)→2.0, E=(1,1)→√2≈1.41. Three nearest: A(1.0), B(1.0), E(1.41). Votes: A=Class+, B=Class+, E=Class−. Result: <strong>Class+ wins 2 to 1</strong>."
+  },
+  {
+    section: "Distance Calculations",
+    text: "Minkowski distance with p=1 between A=(2,3,1) and B=(5,7,4) is:",
+    badge: "calc",
+    opts: [
+      "√34 ≈ 5.83",
+      "10",
+      "√58",
+      "7"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — 10.</strong> p=1 is Manhattan distance: |5−2| + |7−3| + |4−1| = 3 + 4 + 3 = <strong>10</strong>. For comparison, Euclidean (p=2) = √(9+16+9) = √34 ≈ 5.83. Remember: Minkowski p=1 → Manhattan; p=2 → Euclidean."
+  },
+  {
+    section: "Distance Calculations",
+    text: "For points A=(1,1) and B=(5,5), what is the <strong>Chebyshev distance</strong>?",
+    badge: "calc",
+    opts: [
+      "√32 ≈ 5.66",
+      "4",
+      "8",
+      "2"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — 4.</strong> Chebyshev distance = max(|5−1|, |5−1|) = max(4, 4) = <strong>4</strong>. Chebyshev takes only the single largest coordinate difference. It corresponds to Minkowski with p→∞. Euclidean = √32 ≈ 5.66; Manhattan = 8."
+  },
+  {
+    section: "Distance Calculations",
+    text: "Feature 1 has range [0, 1] and Feature 2 has range [0, 10000]. Without scaling, which statement is true about KNN distances?",
+    badge: "concept",
+    opts: [
+      "Feature 1 dominates because smaller values are more precise",
+      "Both features contribute equally since KNN normalises internally",
+      "Feature 2 dominates completely — differences in Feature 1 are negligible",
+      "KNN ignores Feature 2 because it is too large"
+    ],
+    ans: 2,
+    exp: "<strong>Correct.</strong> A 1-unit change in Feature 2 is 10,000× larger than a 1-unit change in Feature 1. In Euclidean distance, Feature 2 will dominate every calculation. KNN will essentially ignore Feature 1 entirely, as if it does not exist. This is why <strong>StandardScaler or MinMaxScaler must be applied before KNN</strong>."
+  },
+
+  // ── SECTION 3: Feature Scaling ──────────────────────────────────────────────
+  {
+    section: "Feature Scaling",
+    text: "You split your data into training and test sets, then scale. Which approach is correct?",
+    badge: "concept",
+    opts: [
+      "Fit the scaler on ALL data (train + test), then transform both",
+      "Fit the scaler on training data only, then transform train and test separately",
+      "Fit the scaler on test data, then transform train using the same scaler",
+      "Scale each feature independently on its own split"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> You must fit on <em>training data only</em>. If you fit on test data too, you leak information about the test set's distribution into preprocessing — this is called <strong>data leakage</strong>. The test set must be treated as completely unseen: <code>scaler.fit_transform(X_train)</code> then <code>scaler.transform(X_test)</code>."
+  },
+  {
+    section: "Feature Scaling",
+    text: "After applying StandardScaler, what is the approximate mean and standard deviation of each transformed feature?",
+    badge: "concept",
+    opts: [
+      "Mean = 1, Std = 0",
+      "Mean = 0.5, Std = 0.5",
+      "Mean = 0, Std = 1",
+      "Mean = 0, Std = 0 (all values become identical)"
+    ],
+    ans: 2,
+    exp: "<strong>Correct.</strong> StandardScaler applies the formula <em>z = (x − μ) / σ</em>. After transformation: mean ≈ 0 and standard deviation ≈ 1. This centres the data at zero and makes each feature's spread comparable — so no single feature can dominate KNN distances simply because of its scale."
+  },
+
+  // ── SECTION 4: Classification ───────────────────────────────────────────────
+  {
+    section: "KNN Classification",
+    text: "You have a binary class problem. K=6, and among the 6 nearest neighbours, 3 vote Class A and 3 vote Class B. What is the most sensible fix?",
+    badge: "concept",
+    opts: [
+      "Randomly pick one class",
+      "Use K=5 (odd K) to avoid ties",
+      "Always choose the minority class",
+      "Increase K to 12"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> For binary classification, <strong>always prefer odd values of K</strong> to eliminate ties. With K=5, you always get at minimum a 3-2 majority. Increasing to K=12 (still even) doesn't fix the problem. Randomly picking a class introduces variance without improving the model."
+  },
+  {
+    section: "KNN Classification",
+    text: "A confusion matrix shows: TP=45, TN=40, FP=5, FN=10. What is the accuracy?",
+    badge: "calc",
+    opts: [
+      "85%",
+      "90%",
+      "75%",
+      "80%"
+    ],
+    ans: 0,
+    exp: "<strong>Correct — 85%.</strong> Accuracy = (TP + TN) / (TP + TN + FP + FN) = (45 + 40) / (45 + 40 + 5 + 10) = 85 / 100 = <strong>0.85 = 85%</strong>. Note: accuracy alone can be misleading with imbalanced classes — precision, recall and F1-score tell a richer story."
+  },
+  {
+    section: "KNN Classification",
+    text: "A KNN classifier achieves 100% train accuracy but only 62% test accuracy. What is the most likely diagnosis?",
+    badge: "concept",
+    opts: [
+      "The model is underfitting — K is too large",
+      "The model is overfitting — K is too small",
+      "The dataset is too small to draw conclusions",
+      "The scaler was not applied"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — overfitting.</strong> Perfect training accuracy with poor test accuracy is the classic overfitting signature. In KNN, this happens when K is very small (especially K=1), where the model memorises every training point including noise. The solution is to increase K and use cross-validation to find the right value."
+  },
+  {
+    section: "KNN Classification",
+    text: "Training data: 900 Class A samples, 100 Class B samples. K=9. In most regions of the feature space, which class is the model likely to over-predict?",
+    badge: "concept",
+    opts: [
+      "Class B — because the model corrects for imbalance automatically",
+      "Class A — because it dominates the neighbourhood in most regions",
+      "Neither — KNN is naturally immune to class imbalance",
+      "The rarer class is always preferred to maximise recall"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — Class A.</strong> KNN has a built-in bias toward majority classes. In most regions, 9 random neighbours will contain ~9 Class A samples simply because 90% of training data is Class A. The model learns to almost always predict Class A. Solutions include oversampling the minority class (SMOTE) or using distance-weighted voting."
+  },
+
+  // ── SECTION 5: Regression ───────────────────────────────────────────────────
+  {
+    section: "KNN Regression",
+    text: "KNN regression with K=1 is used on the training data. What is the train MSE?",
+    badge: "concept",
+    opts: [
+      "It depends on the noise level in the data",
+      "Exactly 0 — every training point is its own nearest neighbour",
+      "Very high — because single neighbours introduce high variance",
+      "Undefined — MSE cannot be 0"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — exactly 0.</strong> With K=1, every training point's prediction is itself (it is its own nearest neighbour). So prediction = true value for all training points, giving MSE = 0. However, this means the model has memorised the training data completely (extreme overfitting) and will generalise very poorly to new data."
+  },
+  {
+    section: "KNN Regression",
+    text: "In KNN regression with K=3, neighbours have values [20, 80, 50]. What is the prediction?",
+    badge: "calc",
+    opts: [
+      "50 (median)",
+      "80 (maximum)",
+      "50 (mean = 150/3)",
+      "20 (minimum)"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — 50.</strong> KNN regression predicts the arithmetic mean: (20 + 80 + 50) / 3 = 150 / 3 = <strong>50</strong>. Note that here the mean and median happen to be equal. Always use the mean for standard KNN regression, not the median or any other statistic."
+  },
+
+  // ── SECTION 6: Weighted KNN ─────────────────────────────────────────────────
+  {
+    section: "Weighted KNN",
+    text: "In distance-weighted KNN, the three nearest neighbours are at distances 1, 1, and 10. Their classes are +, +, −. Standard KNN (uniform) gives which result vs weighted KNN?",
+    badge: "calc",
+    opts: [
+      "Uniform: Class+ (2 vs 1) | Weighted: Class+ (weights ≈ 0.48, 0.48 vs 0.05)",
+      "Uniform: Class− wins because 1+1=2 but 1 neighbor is farther",
+      "Uniform: Tie | Weighted: Class− wins",
+      "Both methods predict Class+ with equal confidence"
+    ],
+    ans: 0,
+    exp: "<strong>Correct.</strong> Uniform: 2 votes for Class+, 1 for Class− → Class+. Weighted: w₁=1/1=1, w₂=1/1=1, w₃=1/10=0.1. Class+ total weight=2.0, Class− weight=0.1. Normalised: Class+ ≈ 95%, Class− ≈ 5% → <strong>Class+ wins strongly</strong>. Both agree here, but the confidence is very different. Distance weighting is most impactful when the farthest neighbour belongs to the minority class."
+  },
+  {
+    section: "Weighted KNN",
+    text: "Three neighbours: distances [2, 4, 4], classes [A, A, B]. What are the normalised weights for distance-weighted KNN?",
+    badge: "calc",
+    opts: [
+      "A: 0.50, A: 0.25, B: 0.25",
+      "A: 0.40, A: 0.40, B: 0.20 (uniform 1/3 each)",
+      "A: 0.33, A: 0.33, B: 0.33",
+      "A: 0.50, A: 0.50, B: 0"
+    ],
+    ans: 0,
+    exp: "<strong>Correct.</strong> Raw weights: w₁=1/2=0.5, w₂=1/4=0.25, w₃=1/4=0.25. Sum=1.0. Normalised: 0.5, 0.25, 0.25. Class A total = 0.5+0.25 = <strong>0.75</strong>. Class B = 0.25. Class A wins with 75% weighted vote vs 67% in uniform voting — the closest neighbour gets extra credit."
+  },
+  {
+    section: "Weighted KNN",
+    text: "When is distance-weighted KNN <em>least</em> likely to outperform uniform KNN?",
+    badge: "concept",
+    opts: [
+      "When K neighbours are spread across very different distances",
+      "When all K neighbours are at approximately the same distance from the query point",
+      "When the dataset is noisy",
+      "When K is very small"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> If all K neighbours are approximately equidistant, the weights (1/d₁, 1/d₂ ... 1/dₖ) become nearly equal — effectively the same as uniform weights. Distance weighting provides the most benefit when some neighbours are <em>much</em> closer than others, giving a disproportionate signal to the true local neighbourhood."
+  },
+
+  // ── SECTION 7: Decision Boundaries ─────────────────────────────────────────
+  {
+    section: "Decision Boundaries",
+    text: "Which dataset shape CANNOT be correctly separated by a linear classifier (like Logistic Regression) but CAN be handled by KNN?",
+    badge: "concept",
+    opts: [
+      "Two well-separated Gaussian blobs",
+      "Linearly arranged points with clear margin",
+      "Concentric rings (inner class surrounded by outer class)",
+      "Two classes that differ only in one feature"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — concentric rings.</strong> No straight line or hyperplane can separate an inner circle from an outer ring — the boundary is circular. KNN handles this naturally because its decision boundary adapts to the actual data distribution. This is the key advantage of non-parametric methods over linear classifiers."
+  },
+  {
+    section: "Decision Boundaries",
+    text: "As K increases from 1 to N (training size), the KNN decision boundary generally becomes:",
+    badge: "concept",
+    opts: [
+      "More complex and jagged",
+      "More smooth, simpler, and eventually becomes a single straight line dividing majority classes",
+      "More accurate because more data is considered",
+      "Unchanged — K does not affect the boundary shape"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> K=1 produces the most complex, jagged boundary (Voronoi regions around each point). As K increases, boundaries smooth out. At K=N, the boundary degenerates to a single split where the majority class covers the entire space — the simplest possible boundary. This illustrates the bias-variance tradeoff directly."
+  },
+  {
+    section: "Decision Boundaries",
+    text: "KNN produces 'islands' in the decision boundary — small isolated patches of one class surrounded by another. This is most associated with:",
+    badge: "concept",
+    opts: [
+      "Large K values that over-smooth",
+      "Small K values (especially K=1) where outliers create their own regions",
+      "Distance-weighted voting",
+      "Feature scaling being applied incorrectly"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> With K=1, every single training point — including outliers and mislabelled points — creates its own 'island' in the decision boundary. This is visually the most dramatic sign of overfitting in KNN. Increasing K smooths these islands away because a single outlier point gets outvoted by its surrounding neighbours."
+  },
+
+  // ── SECTION 8: The K Problem & Bias-Variance ────────────────────────────────
+  {
+    section: "Bias-Variance Tradeoff",
+    text: "You have 400 training samples. What is a reasonable starting value for K according to the lecture's rule of thumb?",
+    badge: "calc",
+    opts: [
+      "K = 5",
+      "K = 10",
+      "K = 20 (≈ √400)",
+      "K = 100"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — K = 20.</strong> The rule of thumb is K = √(n_train) = √400 = 20. This is a starting point, not a final answer. Always use cross-validation to tune K from there. Note that this rule tends to give a K in the 'reasonable middle' of the bias-variance tradeoff."
+  },
+  {
+    section: "Bias-Variance Tradeoff",
+    text: "The test error in KNN forms a <strong>U-shape</strong> as K increases. What causes the <em>right side</em> of the U to rise?",
+    badge: "concept",
+    opts: [
+      "Overfitting — the model starts memorising test data",
+      "Underfitting — too many neighbours average out the local pattern (high bias)",
+      "Computational errors due to large K",
+      "The model starts weighting distant neighbours too highly"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — underfitting / high bias.</strong> The left side rises due to high variance (small K, overfitting). The right side rises because a very large K forces every prediction to consider the global majority — losing sensitivity to local patterns. This is the classic bias-variance tradeoff: the minimum of the U-curve is the sweet spot."
+  },
+  {
+    section: "Bias-Variance Tradeoff",
+    text: "Cross-validation is used to select K. Which of these is the correct procedure?",
+    badge: "concept",
+    opts: [
+      "Split data once into train/test, evaluate different K values on the test set, pick the best K",
+      "Evaluate K values on the full dataset and pick the K with the highest accuracy",
+      "Split train data into multiple folds, evaluate each K on held-out folds, pick K with highest average CV score",
+      "Train on 100% of data and measure training accuracy for each K"
+    ],
+    ans: 2,
+    exp: "<strong>Correct.</strong> Cross-validation means splitting the <em>training data</em> into multiple folds. For each K, you train on all-but-one fold and evaluate on the held-out fold, rotating through all folds. The K with the highest <em>average</em> CV score is selected. The test set is kept completely separate and used <strong>only once</strong> for final evaluation."
+  },
+
+  // ── SECTION 9: Pros & Cons ──────────────────────────────────────────────────
+  {
+    section: "Pros and Cons",
+    text: "The 'Curse of Dimensionality' in KNN means:",
+    badge: "concept",
+    opts: [
+      "KNN becomes computationally impossible above 10 dimensions",
+      "In high dimensions, all points become approximately equidistant — 'nearest' loses meaning",
+      "Feature scaling is more difficult in high dimensions",
+      "The decision boundary always becomes linear in high dimensions"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> As dimensions grow, the ratio of the nearest to farthest distance approaches 1 — all points become equally 'close'. With no meaningful variation in distances, KNN cannot identify genuinely similar points. The solution is dimensionality reduction (PCA, feature selection) before applying KNN to high-dimensional data."
+  },
+  {
+    section: "Pros and Cons",
+    text: "What is the prediction time complexity of KNN for a <em>single</em> new query point?",
+    badge: "concept",
+    opts: [
+      "O(1) — constant time lookup",
+      "O(log n) — using a sorted index",
+      "O(n × d) — must compare to all n training points across d features",
+      "O(K) — only K comparisons needed"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — O(n × d).</strong> For each new point, KNN computes its distance to every one of the n training points. Each distance calculation involves d feature comparisons. So the total cost is O(n × d). For 1 million training points and 100 features, that is 100 million operations per query. This is KNN's biggest practical limitation."
+  },
+  {
+    section: "Pros and Cons",
+    text: "You add 30 completely random (noise) features to your dataset before training KNN. What happens?",
+    badge: "concept",
+    opts: [
+      "Accuracy improves because more information is available",
+      "Accuracy is unchanged because KNN ignores irrelevant features automatically",
+      "Accuracy drops because noise features corrupt distance calculations",
+      "KNN raises an error when given irrelevant features"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — accuracy drops.</strong> KNN has no built-in feature selection. Every feature participates equally in distance calculations. Adding 30 random noise features means distances are dominated by random values — the 'nearest' neighbours are picked based mostly on noise. Unlike Decision Trees, KNN cannot identify and ignore irrelevant features."
+  },
+  {
+    section: "Pros and Cons",
+    text: "A new batch of 5,000 labelled training examples arrives overnight. How does KNN handle this compared to a trained neural network?",
+    badge: "concept",
+    opts: [
+      "KNN is worse — it must retrain from scratch on all data",
+      "Both require complete retraining before the new data is usable",
+      "KNN instantly benefits — just append the new points; no retraining needed",
+      "KNN ignores new data until the model is explicitly re-fit"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — instant adaptation.</strong> Because KNN stores data rather than building a model, new training examples are immediately usable. You simply append them to the stored set. A neural network, by contrast, must be re-trained (which can take hours or days) before it benefits from new data. This makes KNN ideal for online/streaming learning."
+  },
+
+  // ── SECTION 10: Mixed / Hard ─────────────────────────────────────────────────
+  {
+    section: "Mixed & Hard",
+    text: "Which distance metric is most appropriate for classifying whether two text documents are about the same topic?",
+    badge: "hard",
+    opts: [
+      "Euclidean — measures exact word count differences",
+      "Manhattan — sums absolute word frequency differences",
+      "Cosine — measures the angle between term-frequency vectors, ignoring document length",
+      "Chebyshev — focuses on the single most different word"
+    ],
+    ans: 2,
+    exp: "<strong>Correct — Cosine distance.</strong> In text, two documents can have very different lengths but discuss the same topic. Euclidean and Manhattan are dominated by document length. Cosine similarity measures the <em>angle</em> between TF-IDF vectors — a short tweet and a long article about AI will have a small angle (close to 1) if they discuss the same topic."
+  },
+  {
+    section: "Mixed & Hard",
+    text: "A model has K=3, distance-weighted voting. Distances to neighbours: [0.5, 1.0, 3.0]. Classes: [B, A, A]. Which class wins and what is class B's approximate percentage weight?",
+    badge: "hard",
+    opts: [
+      "Class A wins; Class B weight ≈ 50%",
+      "Class B wins; Class B weight ≈ 57%",
+      "Tie; each class gets exactly 50%",
+      "Class A wins; Class B weight ≈ 20%"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — Class B wins at ~57%.</strong> Weights: w₁=1/0.5=2.0 (B), w₂=1/1.0=1.0 (A), w₃=1/3.0≈0.33 (A). Sum=3.33. Class B = 2.0/3.33 ≈ 60%. Class A = 1.33/3.33 ≈ 40%. Despite 2 neighbours being Class A (which would win under uniform voting), the single very close Class B neighbour dominates due to its weight of 2.0 — <strong>Class B wins</strong>."
+  },
+  {
+    section: "Mixed & Hard",
+    text: "You use 5-fold cross-validation over K = 1 to 20 and find K=7 has the highest CV score. You then evaluate on the test set and get 84%. A colleague suggests you now search K=6 to K=8 more finely to squeeze out more performance on the test set. What is the fundamental problem with this?",
+    badge: "hard",
+    opts: [
+      "There is no problem — fine-tuning K is always beneficial",
+      "You are leaking the test set into the model selection process (data snooping)",
+      "The test set is too small to evaluate fine-grained K differences",
+      "Cross-validation scores are always more reliable than test set scores"
+    ],
+    ans: 1,
+    exp: "<strong>Correct — data snooping / test set leakage.</strong> The test set must be used <em>exactly once</em> for final reporting. When you use test set performance to guide further hyperparameter tuning, the test set effectively becomes part of the training process. Your reported 84% then overestimates real-world performance. The correct procedure: use CV only, pick the best K, test once, report — done."
+  },
+  {
+    section: "Mixed & Hard",
+    text: "KNN classification vs. KNN regression: which statement is TRUE about their core difference?",
+    badge: "hard",
+    opts: [
+      "Classification uses Euclidean distance; regression uses Manhattan distance",
+      "Classification uses majority vote over K neighbours; regression uses their arithmetic mean",
+      "Regression always requires more neighbours (larger K) than classification",
+      "Classification returns a probability; regression returns a class label"
+    ],
+    ans: 1,
+    exp: "<strong>Correct.</strong> The KNN algorithm is identical up to the final step: both find K nearest neighbours using the same distance formula. The only difference is the aggregation: <strong>classification takes a majority vote</strong> (most frequent class), while <strong>regression takes the arithmetic mean</strong> (average target value). Both can use the same K and distance metric."
+  }
+];
+
+// ── BUILD QUIZ ───────────────────────────────────────────────────────────────
+const SECTIONS = [...new Set(Q.map(q => q.section))];
+const body     = document.getElementById('quiz-body');
+let answered   = 0;
+
+SECTIONS.forEach(sec => {
+  const secDiv   = document.createElement('div');
+  const label    = document.createElement('div');
+  label.className= 'section-label';
+  label.textContent = sec;
+  secDiv.appendChild(label);
+
+  const sectionQs = Q.filter(q => q.section === sec);
+  sectionQs.forEach(q => {
+    const idx = Q.indexOf(q);
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = `card-${idx}`;
+
+    const badgeMap = { calc:'badge-calc', concept:'badge-concept', hard:'badge-hard' };
+    const badgeTxt = { calc:'Calculation', concept:'Concept', hard:'Advanced' };
+
+    card.innerHTML = `
+      <div class="q-number">Q${idx + 1} &nbsp;/&nbsp; 32
+        <span class="badge ${badgeMap[q.badge]}">${badgeTxt[q.badge]}</span>
+      </div>
+      <div class="q-text">${q.text}</div>
+      <div class="options" id="opts-${idx}">
+        ${q.opts.map((o, oi) => `
+          <div class="opt" id="opt-${idx}-${oi}" onclick="choose(${idx},${oi})">
+            <div class="opt-key">${String.fromCharCode(65+oi)}</div>
+            <div class="opt-text">${o}</div>
+          </div>`).join('')}
+      </div>
+      <div class="explanation" id="exp-${idx}">${q.exp}</div>
+    `;
+    secDiv.appendChild(card);
+  });
+  body.appendChild(secDiv);
+});
+
+// ── INTERACTION ──────────────────────────────────────────────────────────────
+const userAnswers = new Array(Q.length).fill(null);
+
+function choose(qIdx, optIdx) {
+  if (userAnswers[qIdx] !== null) return;
+  userAnswers[qIdx] = optIdx;
+  answered++;
+
+  const card  = document.getElementById(`card-${qIdx}`);
+  const exp   = document.getElementById(`exp-${qIdx}`);
+  const correct = Q[qIdx].ans;
+
+  card.classList.add('answered');
+
+  Q[qIdx].opts.forEach((_, oi) => {
+    const opt = document.getElementById(`opt-${qIdx}-${oi}`);
+    opt.classList.add('disabled');
+    if (oi === correct) opt.classList.add('correct');
+    if (oi === optIdx && oi !== correct) opt.classList.add('wrong');
+  });
+
+  exp.classList.add('show');
+
+  // progress
+  const pct = Math.round((answered / Q.length) * 100);
+  document.getElementById('progress-fill').style.width  = pct + '%';
+  document.getElementById('progress-label').textContent = `${answered} / ${Q.length} answered`;
+  document.getElementById('progress-pct').textContent   = pct + '%';
+}
+
+// ── SUBMIT ───────────────────────────────────────────────────────────────────
+document.getElementById('submit-btn').addEventListener('click', () => {
+  const unanswered = userAnswers.reduce((a,v,i)=> v===null ? [...a,i]:a, []);
+  if (unanswered.length > 0) {
+    // auto-answer unanswered as wrong
+    unanswered.forEach(i => {
+      if (userAnswers[i] === null) {
+        userAnswers[i] = -1;
+        answered++;
+        const card = document.getElementById(`card-${i}`);
+        card.classList.add('answered');
+        document.getElementById(`exp-${i}`).classList.add('show');
+        Q[i].opts.forEach((_, oi) => {
+          const opt = document.getElementById(`opt-${i}-${oi}`);
+          opt.classList.add('disabled');
+          if (oi === Q[i].ans) opt.classList.add('correct');
+        });
+      }
+    });
+  }
+
+  const score    = userAnswers.filter((v,i) => v === Q[i].ans).length;
+  const pct      = Math.round((score / Q.length) * 100);
+  const wrong    = Q.length - score;
+  const calcQ    = Q.filter(q=>q.badge==='calc');
+  const calcScore= calcQ.filter(q=>userAnswers[Q.indexOf(q)]===q.ans).length;
+
+  let grade, gradeColor;
+  if      (pct >= 85) { grade='Expert';      gradeColor='#22c55e'; }
+  else if (pct >= 70) { grade='Proficient';  gradeColor='#4f9cf9'; }
+  else if (pct >= 55) { grade='Developing';  gradeColor='#f59e0b'; }
+  else                { grade='Keep Studying'; gradeColor='#ef4444'; }
+
+  const circumference = 2 * Math.PI * 58;
+  const dash = circumference * (score / Q.length);
+
+  const missedHTML = Q.map((q,i) => {
+    const ua = userAnswers[i];
+    if (ua === q.ans) return '';
+    return `<div class="review-item">
+      <span class="ri-icon">❌</span>
+      <div>
+        <div class="ri-q">Q${i+1}: ${q.text.replace(/<[^>]+>/g,'').substring(0,80)}...</div>
+        <div class="ri-ans ri-correct">✓ Correct: ${q.opts[q.ans]}</div>
+        ${ua >= 0 ? `<div class="ri-ans ri-wrong">✗ Your answer: ${q.opts[ua]}</div>` : '<div class="ri-ans ri-wrong">✗ Not answered</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  const results = document.getElementById('results');
+  results.innerHTML = `
+    <div class="results-header">
+      <div class="score-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="58" fill="none" stroke="#1f2733" stroke-width="10"/>
+          <circle cx="70" cy="70" r="58" fill="none"
+            stroke="${gradeColor}" stroke-width="10"
+            stroke-dasharray="${dash} ${circumference}"
+            stroke-linecap="round"/>
+        </svg>
+        <div class="score-ring-number" style="color:${gradeColor}">${pct}%</div>
+        <div class="score-ring-label">SCORE</div>
+      </div>
+      <div class="results-title" style="color:${gradeColor}">${grade}</div>
+      <div class="results-sub">${score} correct out of ${Q.length} questions</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <span class="stat-val" style="color:var(--green)">${score}</span>
+        <div class="stat-name">Correct</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-val" style="color:var(--red)">${wrong}</span>
+        <div class="stat-name">Wrong / Skipped</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-val" style="color:var(--yellow)">${calcScore}/${calcQ.length}</span>
+        <div class="stat-name">Calculation Qs</div>
+      </div>
+    </div>
+
+    ${missedHTML ? `
+    <div class="review-section">
+      <h3>Questions to Review</h3>
+      ${missedHTML}
+    </div>` : `
+    <div class="review-section" style="text-align:center;padding:40px">
+      <div style="font-size:40px">🎉</div>
+      <h3 style="margin-top:12px;color:var(--green)">Perfect Score!</h3>
+      <p style="color:var(--muted);margin-top:8px">You answered every question correctly. Exceptional work.</p>
+    </div>`}
+
+    <div style="padding:0 32px 32px">
+      <button id="retry-btn" onclick="location.reload()">Retry Quiz</button>
+    </div>
+  `;
+
+  results.classList.add('show');
+  results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('submit-btn').style.display = 'none';
+
+  // update progress to 100%
+  document.getElementById('progress-fill').style.width  = '100%';
+  document.getElementById('progress-label').textContent = `${Q.length} / ${Q.length} answered`;
+  document.getElementById('progress-pct').textContent   = '100%';
+});
+</script>
+</body>
+</html>
